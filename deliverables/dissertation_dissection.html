@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dissertation Dissection — Jacob Edward Thomas, PhD</title>
+<style>
+  :root {
+    --deep-blue: #0a1628;
+    --mid-blue: #131f38;
+    --light-blue: #1a2a4a;
+    --accent: #BF5700;
+    --accent-glow: rgba(191, 87, 0, 0.3);
+    --text-primary: #e8ecf1;
+    --text-secondary: #9aa8c0;
+    --text-muted: #5d6f8a;
+    --card-bg: rgba(19, 31, 56, 0.85);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --glass: rgba(255, 255, 255, 0.03);
+  }
+
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--deep-blue);
+    color: var(--text-primary);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(191, 87, 0, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(26, 42, 74, 0.5) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Typography ── */
+  h1, h2, h3, h4 {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  h1 { font-size: clamp(2rem, 5vw, 3.2rem); }
+  h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
+  h3 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  section {
+    padding: 5rem 0;
+  }
+
+  /* ── Navigation dots ── */
+  .nav-dots {
+    position: fixed;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    z-index: 100;
+  }
+
+  .nav-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.4;
+  }
+
+  .nav-dot:hover, .nav-dot.active {
+    background: var(--accent);
+    opacity: 1;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  /* ── Hero / Dissertation block ── */
+  #dissertation {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-top: 3rem;
+  }
+
+  .dissertation-block {
+    background: linear-gradient(145deg, var(--mid-blue), var(--light-blue));
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 3.5rem 3rem;
+    max-width: 780px;
+    width: 100%;
+    position: relative;
+    box-shadow:
+      0 4px 60px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    animation: riseIn 1s ease-out;
+  }
+
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .dissertation-block::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 17px;
+    background: linear-gradient(135deg, var(--accent) 0%, transparent 40%, transparent 60%, var(--accent) 100%);
+    opacity: 0.15;
+    z-index: -1;
+  }
+
+  .label-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 0.25rem 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .dissertation-title {
+    font-family: Georgia, serif;
+    font-size: clamp(1.3rem, 3vw, 1.75rem);
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  .dissertation-author {
+    font-size: 1.15rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+
+  .dissertation-meta {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+  }
+
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-number {
+    display: block;
+    font-family: Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+  }
+
+  .scroll-hint {
+    margin-top: 3rem;
+    animation: pulse 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .scroll-hint span {
+    display: block;
+    font-size: 1.5rem;
+    margin-top: 0.3rem;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(6px); }
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    text-align: center;
+    margin-bottom: 3.5rem;
+  }
+
+  .section-header h2 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .section-header .section-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .accent-line {
+    width: 60px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 3px;
+    margin: 1rem auto;
+  }
+
+  /* ── Dissection connector ── */
+  .dissection-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 0;
+    position: relative;
+  }
+
+  .connector-line {
+    width: 2px;
+    height: 80px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent) 60%, transparent);
+    position: relative;
+  }
+
+  .connector-line::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid var(--accent);
+  }
+
+  .connector-symbol {
+    font-size: 2rem;
+    color: var(--accent);
+    margin: 1rem 0;
+    animation: spinSlow 8s linear infinite;
+  }
+
+  @keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── Output cards ── */
+  .outputs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .output-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 2rem 1.8rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .output-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .output-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(191, 87, 0, 0.25);
+  }
+
+  .output-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .output-card:hover::before {
+    opacity: 1;
+  }
+
+  .output-number {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.5rem;
+    font-family: Georgia, serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    opacity: 0.08;
+    line-height: 1;
+  }
+
+  .output-type {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.7rem;
+    border-radius: 3px;
+    margin-bottom: 1rem;
+  }
+
+  .type-book { background: rgba(191, 87, 0, 0.15); color: var(--accent); }
+  .type-software { background: rgba(56, 189, 148, 0.12); color: #38bd94; }
+  .type-paper { background: rgba(99, 143, 255, 0.12); color: #638fff; }
+  .type-paper-2 { background: rgba(180, 120, 255, 0.12); color: #b478ff; }
+
+  .output-title {
+    font-family: Georgia, serif;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    line-height: 1.35;
+    padding-right: 2rem;
+  }
+
+  .output-detail {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .output-detail .detail-label {
+    color: var(--text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 55px;
+  }
+
+  .output-detail .detail-value {
+    color: var(--text-secondary);
+  }
+
+  .output-why {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.65;
+  }
+
+  .output-why strong {
+    color: var(--text-primary);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  /* ── Strategy section ── */
+  #strategy {
+    background: linear-gradient(180deg, transparent, rgba(191, 87, 0, 0.02) 30%, rgba(191, 87, 0, 0.02) 70%, transparent);
+  }
+
+  .strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .strategy-card {
+    background: var(--glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: border-color 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .strategy-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .strategy-card:hover {
+    border-color: rgba(191, 87, 0, 0.2);
+  }
+
+  .strategy-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .strategy-card h3 {
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+    font-size: 1.1rem;
+  }
+
+  .strategy-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* ── Timeline section ── */
+  #timeline {
+    padding-bottom: 3rem;
+  }
+
+  .timeline-track {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0;
+    margin-top: 2rem;
+    position: relative;
+  }
+
+  .timeline-track::before {
+    content: '';
+    position: absolute;
+    top: 38px;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent), transparent);
+    opacity: 0.4;
+  }
+
+  .timeline-node {
+    flex: 1;
+    max-width: 280px;
+    text-align: center;
+    position: relative;
+    padding: 0 1rem;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .timeline-node.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .timeline-dot {
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin: 28px auto 1.2rem;
+    position: relative;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .timeline-dot::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    opacity: 0.3;
+    animation: ringPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes ringPulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.3); opacity: 0; }
+  }
+
+  .timeline-month {
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+
+  .timeline-content {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .timeline-arrow {
+    position: absolute;
+    top: 34px;
+    right: -12px;
+    color: var(--accent);
+    font-size: 1.2rem;
+    opacity: 0.5;
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  footer .footer-name {
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+  }
+
+  footer .footer-divider {
+    color: var(--accent);
+    margin: 0 0.5rem;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .outputs-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .strategy-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .timeline-track {
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .timeline-track::before {
+      display: none;
+    }
+
+    .timeline-arrow {
+      display: none;
+    }
+
+    .dissertation-block {
+      padding: 2.5rem 1.8rem;
+    }
+
+    .stats-row {
+      gap: 1.5rem;
+    }
+
+    .nav-dots {
+      display: none;
+    }
+
+    section {
+      padding: 3.5rem 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .container {
+      padding: 0 1.2rem;
+    }
+
+    .output-card {
+      padding: 1.5rem 1.3rem;
+    }
+
+    .dissertation-block {
+      padding: 2rem 1.3rem;
+    }
+  }
+
+  /* ── Utility ── */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation dots -->
+<nav class="nav-dots" aria-label="Section navigation">
+  <button class="nav-dot active" data-target="dissertation" title="The Dissertation"></button>
+  <button class="nav-dot" data-target="dissection" title="The Dissection"></button>
+  <button class="nav-dot" data-target="strategy" title="The Strategy"></button>
+  <button class="nav-dot" data-target="timeline" title="The Timeline"></button>
+</nav>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 1: THE DISSERTATION                 -->
+<!-- ════════════════════════════════════════════ -->
+<section id="dissertation">
+  <div class="container">
+    <div class="dissertation-block">
+      <div class="label-tag">The Dissertation</div>
+
+      <div class="dissertation-title">
+        Alcohol Marketing on Social Media During the COVID&#8209;19 Pandemic:<br>
+        Historical Perspectives, Modern Evidence, and Future Regulation
+      </div>
+
+      <div class="dissertation-author">Jacob Edward Thomas, PhD</div>
+      <div class="dissertation-meta">The University of Texas at Austin &middot; 2025</div>
+
+      <div class="stats-row">
+        <div class="stat">
+          <span class="stat-number">304</span>
+          <span class="stat-label">Pages</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">7</span>
+          <span class="stat-label">Years</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">3</span>
+          <span class="stat-label">Lenses</span>
+        </div>
+      </div>
+
+      <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+        Three complementary lenses &mdash; historical, computational, and empirical &mdash; converging on a single question: how alcohol marketing adapts, spreads, and influences during crisis.
+      </p>
+    </div>
+
+    <div class="scroll-hint">
+      Scroll to see the dissection
+      <span>&#8681;</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 2: THE DISSECTION                   -->
+<!-- ════════════════════════════════════════════ -->
+<section id="dissection">
+  <div class="container">
+    <div class="section-header">
+      <h2>The Dissection</h2>
+      <div class="accent-line"></div>
+      <p class="section-subtitle">One dissertation, four strategic outputs &mdash; each designed to maximize reach, speed, and scholarly impact.</p>
+    </div>
+
+    <div class="dissection-connector">
+      <div class="connector-line"></div>
+      <div class="connector-symbol">&#10022;</div>
+    </div>
+
+    <div class="outputs-grid">
+
+      <!-- Output 1 -->
+      <div class="output-card" data-delay="0">
+        <span class="output-number">01</span>
+        <span class="output-type type-book">Popular Book</span>
+        <h3 class="output-title">The Drinking Age: How the Alcohol Industry Shaped America</h3>
+        <div class="output-detail">
+          <span class="detail-label">Source</span>
+          <span class="detail-value">Part A &mdash; Historical Perspectives</span>
+        </div>
+        <div class="output-detail">
+          <span class="detail-label">Format</span>
+          <span class="detail-value">Popular history book (docx)</span>
+        </div>
+        <div class="output-why">
+          <strong>Why:</strong> A unique historical narrative with no equivalent in existing literature. A book-length contribution that no journal article format could capture. Accessible to public audiences beyond academia.
+        </div>
+      </div>
+
+      <!-- Output 2 -->
+      <div class="output-card" data-delay="100">
+        <span class="output-number">02</span>
+        <span class="output-type type-software">Software &amp; Preprint</span>
+        <h3 class="output-title">TopicFlow: A BERTopic and LLM Pipeline for Topic Discovery and Classification</h3>
+        <div class="output-detail">
+          <span class="detail-label">Source</span>
+          <span class="detail-value">Methodology (Chapters 3&ndash;4, Appendices 1&ndash;3)</span>
+        </div>
+        <div class="output-detail">
+          <span class="detail-label">Format</span>
+          <span class="detail-value">Open-source Python package + methodology paper (preprint)</span>
+        </div>
+        <div class="output-why">
+          <strong>Why:</strong> Novel computational methodology worthy of standalone publication. Preprint establishes priority. Software enables reproducibility and reuse by other researchers.
+        </div>
+      </div>
+
+      <!-- Output 3 -->
+      <div class="output-card" data-delay="200">
+        <span class="output-number">03</span>
+        <span class="output-type type-paper">Brief Report &mdash; Study 1</span>
+        <h3 class="output-title">Alcohol Marketing Themes on Twitter During the COVID&#8209;19 Pandemic</h3>
+        <div class="output-detail">
+          <span class="detail-label">Source</span>
+          <span class="detail-value">Chapter 4 (Study 1) &mdash; topic model + prevalence</span>
+        </div>
+        <div class="output-detail">
+          <span class="detail-label">Format</span>
+          <span class="detail-value">Brief research report (docx)</span>
+        </div>
+        <div class="output-detail">
+          <span class="detail-label">Cites</span>
+          <span class="detail-value">TopicFlow preprint for methodology</span>
+        </div>
+        <div class="output-why">
+          <strong>Why:</strong> Validates and extends previous findings with novel methodology. Brief format enables faster peer review.
+        </div>
+      </div>
+
+      <!-- Output 4 -->
+      <div class="output-card" data-delay="300">
+        <span class="output-number">04</span>
+        <span class="output-type type-paper-2">Brief Report &mdash; Study 2</span>
+        <h3 class="output-title">Alcohol Industry Marketing Influence on User&#8209;Generated Content During COVID&#8209;19</h3>
+        <div class="output-detail">
+          <span class="detail-label">Source</span>
+          <span class="detail-value">Chapter 5 (Study 2)</span>
+        </div>
+        <div class="output-detail">
+          <span class="detail-label">Format</span>
+          <span class="detail-value">Brief research report (docx)</span>
+        </div>
+        <div class="output-detail">
+          <span class="detail-label">Builds on</span>
+          <span class="detail-value">Study 1 findings + TopicFlow methodology</span>
+        </div>
+        <div class="output-why">
+          <strong>Why:</strong> First evidence of unidirectional industry-to-public influence on social media during the pandemic. Completes the empirical story.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 3: THE STRATEGY                     -->
+<!-- ════════════════════════════════════════════ -->
+<section id="strategy">
+  <div class="container">
+    <div class="section-header">
+      <h2>The Strategy</h2>
+      <div class="accent-line"></div>
+      <p class="section-subtitle">Why dissect the dissertation this way? Four deliberate reasons.</p>
+    </div>
+
+    <div class="strategy-grid">
+
+      <div class="strategy-card" data-delay="0">
+        <span class="strategy-icon">&#9889;</span>
+        <h3>Speed</h3>
+        <p>The data spans 2019&ndash;2021. Traditional journal submissions could take 1&ndash;2 more years. This approach gets findings into the literature rapidly &mdash; preprints establish priority, brief reports accelerate peer review.</p>
+      </div>
+
+      <div class="strategy-card" data-delay="100">
+        <span class="strategy-icon">&#10150;</span>
+        <h3>Interconnection</h3>
+        <p>Each output builds on the others. The preprint is cited by both empirical papers. Study 2 builds on Study 1. The book provides historical context for everything. Together, they form a coherent body of work.</p>
+      </div>
+
+      <div class="strategy-card" data-delay="200">
+        <span class="strategy-icon">&#9775;</span>
+        <h3>Breadth of Impact</h3>
+        <p>Software reaches computational researchers. Papers reach health scientists and policy makers. The book reaches the public. One dissertation, three distinct audiences.</p>
+      </div>
+
+      <div class="strategy-card" data-delay="300">
+        <span class="strategy-icon">&#9724;</span>
+        <h3>The Unified Work Remains</h3>
+        <p>The dissertation itself remains the unified scholarly contribution &mdash; the single document where all three lenses converge. These outputs extend its reach without diminishing its wholeness.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 4: THE TIMELINE                     -->
+<!-- ════════════════════════════════════════════ -->
+<section id="timeline">
+  <div class="container">
+    <div class="section-header">
+      <h2>The Timeline</h2>
+      <div class="accent-line"></div>
+      <p class="section-subtitle">A three-month publication sequence, each stage enabling the next.</p>
+    </div>
+
+    <div class="timeline-track">
+
+      <div class="timeline-node" data-delay="0">
+        <div class="timeline-month">Month 1</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <strong style="color: var(--text-primary);">Preprint + Software Release</strong><br>
+          TopicFlow package published. Methodology preprint posted. Priority established.
+        </div>
+        <span class="timeline-arrow">&#10132;</span>
+      </div>
+
+      <div class="timeline-node" data-delay="200">
+        <div class="timeline-month">Month 2</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <strong style="color: var(--text-primary);">Brief Reports Submitted</strong><br>
+          Studies 1 &amp; 2 submitted to target journals. Both cite the preprint for methodology.
+        </div>
+        <span class="timeline-arrow">&#10132;</span>
+      </div>
+
+      <div class="timeline-node" data-delay="400">
+        <div class="timeline-month">Month 3</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <strong style="color: var(--text-primary);">Book Finalized</strong><br>
+          <em>The Drinking Age</em> manuscript completed. The full body of work is public.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- FOOTER                                      -->
+<!-- ════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-name">Jacob Edward Thomas, PhD</div>
+  <div>The University of Texas at Austin<span class="footer-divider">|</span>2025</div>
+</footer>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SCRIPTS                                     -->
+<!-- ════════════════════════════════════════════ -->
+<script>
+(function () {
+  // ── Scroll-triggered animations ──
+  const observerOptions = {
+    threshold: 0.15,
+    rootMargin: '0px 0px -40px 0px'
+  };
+
+  const observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        const delay = parseInt(entry.target.getAttribute('data-delay') || '0', 10);
+        setTimeout(function () {
+          entry.target.classList.add('visible');
+        }, delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.output-card, .strategy-card, .timeline-node').forEach(function (el) {
+    observer.observe(el);
+  });
+
+  // ── Navigation dots ──
+  var dots = document.querySelectorAll('.nav-dot');
+  var sections = ['dissertation', 'dissection', 'strategy', 'timeline'];
+
+  function updateDots() {
+    var scrollPos = window.scrollY + window.innerHeight / 3;
+    var active = 0;
+    sections.forEach(function (id, i) {
+      var section = document.getElementById(id);
+      if (section && section.offsetTop <= scrollPos) {
+        active = i;
+      }
+    });
+    dots.forEach(function (dot, i) {
+      dot.classList.toggle('active', i === active);
+    });
+  }
+
+  dots.forEach(function (dot) {
+    dot.addEventListener('click', function () {
+      var target = dot.getAttribute('data-target');
+      var el = document.getElementById(target);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+
+  window.addEventListener('scroll', updateDots, { passive: true });
+  updateDots();
+})();
+</script>
+
+</body>
+</html>
