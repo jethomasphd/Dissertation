@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E2E Topic Modeler — Embedding-to-Explanation Topic Modeling</title>
+  <meta name="description" content="E2E Topic Modeler: a hybrid analytic tool that embeds documents into semantic space, clusters them, and uses a large language model to generate human-readable topic explanations.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ====== Header ====== -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-accent">E2E</span> Topic Modeler
+      </div>
+      <nav>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#about">About</a>
+        <a href="#app-section">Launch Tool</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ====== Hero ====== -->
+  <section class="hero">
+    <div class="container">
+      <h1><span class="accent">Embedding-to-Explanation</span><br>Topic Modeling</h1>
+      <p class="subtitle">
+        A hybrid analytic approach that maps your documents into semantic embedding space
+        to discover topical clusters, then uses a large language model to convert those
+        clusters into clear, human-readable explanations.
+      </p>
+      <a href="#app-section" class="hero-cta">Get Started</a>
+    </div>
+  </section>
+
+  <!-- ====== How It Works ====== -->
+  <section id="how-it-works" class="section">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-subtitle">Three stages, from raw text to named topics — no coding required.</p>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Embed &amp; Vectorize</h3>
+          <p>Your documents are transformed into TF-IDF vectors that capture the semantic fingerprint of each text — all computed locally in your browser.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Cluster</h3>
+          <p>K-means clustering with cosine similarity groups documents that share underlying topical structure. Choose your own k or let the tool auto-detect it.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Explain</h3>
+          <p>Representative documents from each cluster are sent to Claude, which names and describes every topic — then classifies every document for you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== About ====== -->
+  <section id="about" class="section" style="background:#fff;">
+    <div class="container">
+      <h2 class="section-title">About E2E Topic Modeling</h2>
+      <p class="section-subtitle">A research-grade methodology made accessible through the browser.</p>
+
+      <div class="about-grid">
+        <div class="about-text">
+          <p>
+            <strong>Embedding-to-Explanation Topic Modeling</strong> is a hybrid analytic approach
+            in which documents are first mapped into semantic embedding space using TF-IDF vectorization
+            to identify clusters of language that reflect underlying topical structure, and are then
+            passed to a large language model to convert those statistically derived clusters into clear,
+            human-readable explanations.
+          </p>
+          <p>This tool is designed for:</p>
+          <ul>
+            <li>Researchers analyzing qualitative text data</li>
+            <li>Analysts exploring survey responses, reviews, or reports</li>
+            <li>Anyone with a collection of text documents who needs to find patterns</li>
+          </ul>
+          <p>
+            All embedding and clustering runs <strong>entirely in your browser</strong>. Only the topic-naming
+            and classification stages communicate with the Claude API through a secure proxy — your raw
+            documents are processed locally.
+          </p>
+        </div>
+
+        <div class="csv-format">
+          <h3>CSV Format</h3>
+          <pre>id,text
+1,"This is my first document about climate change."
+2,"Machine learning is transforming healthcare."
+3,"The housing market continues to fluctuate."
+4,"New renewable energy policies were announced."
+...</pre>
+          <p>
+            Your CSV must include an <code>id</code> column and a <code>text</code> column.
+            Additional columns are preserved and included in the results download.
+            The file should be UTF-8 encoded.
+          </p>
+        </div>
+      </div>
+
+      <div class="citation-box">
+        <div class="label">Citation</div>
+        <p>
+          Thomas, J. E. (2025). <em>Embedding-to-Explanation Topic Modeling: A Hybrid Approach
+          for Interpretive Text Analysis.</em> The University of Texas at Austin.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== Application Section ====== -->
+  <section id="app-section" class="section">
+    <div class="container">
+      <h2 class="section-title">Launch the Tool</h2>
+      <p class="section-subtitle">Upload your CSV, configure clustering, and let E2E do the rest.</p>
+
+      <!-- Error Banner -->
+      <div id="error-banner" class="error-banner"></div>
+
+      <!-- Upload Area -->
+      <div class="upload-area">
+        <div id="drop-zone" class="drop-zone">
+          <div class="drop-zone-icon">&#8682;</div>
+          <p><strong>Drop your CSV file here</strong></p>
+          <p class="hint">or click to browse &mdash; requires "id" and "text" columns</p>
+        </div>
+        <input type="file" id="file-input" class="file-input" accept=".csv">
+        <div id="file-info" class="file-info"></div>
+      </div>
+
+      <!-- Cluster Configuration -->
+      <div id="cluster-config" class="cluster-config">
+        <label>Cluster Settings</label>
+        <div class="config-row">
+          <select id="cluster-mode">
+            <option value="auto">Auto-detect k (silhouette score)</option>
+            <option value="manual">Manual k</option>
+          </select>
+          <span id="cluster-k-group" style="display:none;">
+            <input type="number" id="cluster-k" min="2" max="20" value="5" style="width:80px;">
+          </span>
+          <button id="btn-run" class="btn-gold" disabled>Run E2E Pipeline</button>
+        </div>
+      </div>
+
+      <!-- Pipeline Progress -->
+      <div id="pipeline-progress" class="pipeline-progress">
+        <div class="pipeline-stages">
+          <div class="pipeline-stage" data-stage="0">
+            <div class="stage-circle">1</div>
+            <span class="stage-label">Embed &amp; Cluster</span>
+          </div>
+          <div class="pipeline-stage" data-stage="1">
+            <div class="stage-circle">2</div>
+            <span class="stage-label">Name Topics</span>
+          </div>
+          <div class="pipeline-stage" data-stage="2">
+            <div class="stage-circle">3</div>
+            <span class="stage-label">Classify Docs</span>
+          </div>
+        </div>
+        <div class="progress-detail">
+          <p id="progress-text" class="progress-text">Preparing...</p>
+          <div class="progress-bar-track">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cluster Visualization -->
+      <div id="cluster-viz" class="cluster-viz">
+        <h3 style="text-align:center; margin-bottom:16px; color:var(--navy);">Cluster Visualization (PCA Projection)</h3>
+        <canvas id="viz-canvas"></canvas>
+      </div>
+
+      <!-- Results -->
+      <div id="results-section" class="results-section">
+        <div class="results-header">
+          <h2>Discovered Topics</h2>
+          <button id="btn-download" class="btn-primary">Download Results CSV</button>
+        </div>
+
+        <div id="topic-cards" class="topic-cards"></div>
+
+        <h3 style="margin-bottom:16px; color:var(--navy);">Document Classifications <span style="font-weight:400; font-size:0.85rem; color:var(--gray-600);">(showing first 100)</span></h3>
+        <div class="results-table-wrap">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Text</th>
+                <th>Topic</th>
+              </tr>
+            </thead>
+            <tbody id="results-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ====== Footer ====== -->
+  <footer>
+    <p class="credit">Based on the methodology of Thomas (2025). Powered by Claude.</p>
+    <p><span class="author">Jacob Edward Thomas, PhD</span> &mdash; The University of Texas at Austin</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/clustering.js"></script>
+  <script src="js/claude.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
