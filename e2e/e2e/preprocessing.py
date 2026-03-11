@@ -1,5 +1,5 @@
 """
-Text preprocessing module for TopicFlow.
+Text preprocessing module for E2E Topic Modeling.
 
 Provides cleaning, tokenization, stopword removal, and lemmatization
 for preparing text corpora for topic modeling.

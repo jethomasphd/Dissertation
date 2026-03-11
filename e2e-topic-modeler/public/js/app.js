@@ -1,6 +1,10 @@
 /**
  * E2E Topic Modeler — Main Application Logic
- * Orchestrates CSV upload, the three-stage pipeline, results display, and CSV export.
+ *
+ * Pipeline (matches dissertation methodology):
+ *   1. Voyage AI embeddings → UMAP dimensionality reduction → HDBSCAN clustering
+ *   2. Claude democratic topic naming (5 votes, majority wins)
+ *   3. Claude document classification
  */
 
 (() => {
@@ -12,7 +16,7 @@
 
   let rawData = [];        // Array of { id, text, ...extra columns }
   let extraColumns = [];   // Column names beyond id and text
-  let clusterResult = null; // { labels, centroids, k, matrix, repDocs, topTerms, points2d }
+  let clusterResult = null; // { labels, nClusters, umapEmbedding, repDocs, topTerms, points2d }
   let topicInfo = [];      // [{ id, name, description, keywords }]
   let classifications = {}; // { docId: topicName }
 
@@ -42,6 +46,45 @@
   const resultsTableBody = $('#results-table-body');
   const btnDownload = $('#btn-download');
   const errorBanner = $('#error-banner');
+  const workerUrlInput = $('#worker-url-input');
+  const btnSaveUrl = $('#btn-save-url');
+  const workerStatus = $('#worker-status');
+
+  // =========================================================================
+  // Worker URL Configuration
+  // =========================================================================
+
+  function initWorkerUrl() {
+    const saved = localStorage.getItem('e2e_worker_url');
+    if (saved) {
+      workerUrlInput.value = saved;
+      ClaudeAPI.setWorkerUrl(saved);
+      workerStatus.textContent = 'Connected';
+      workerStatus.className = 'worker-status connected';
+    }
+  }
+
+  function saveWorkerUrl() {
+    const url = workerUrlInput.value.trim().replace(/\/+$/, '');
+    if (!url) {
+      showError('Please enter your worker URL.');
+      return;
+    }
+    localStorage.setItem('e2e_worker_url', url);
+    ClaudeAPI.setWorkerUrl(url);
+    workerStatus.textContent = 'Saved';
+    workerStatus.className = 'worker-status connected';
+    hideError();
+  }
+
+  if (btnSaveUrl) btnSaveUrl.addEventListener('click', saveWorkerUrl);
+  if (workerUrlInput) {
+    workerUrlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveWorkerUrl();
+    });
+  }
+
+  initWorkerUrl();
 
   // =========================================================================
   // CSV Parsing
@@ -51,16 +94,13 @@
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
     if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row.');
 
-    // Parse header
     const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
 
-    // Validate required columns
     const idIdx = headers.indexOf('id');
     const textIdx = headers.indexOf('text');
     if (idIdx === -1) throw new Error('CSV must contain an "id" column.');
     if (textIdx === -1) throw new Error('CSV must contain a "text" column.');
 
-    // Track extra columns
     extraColumns = headers.filter((h, i) => i !== idIdx && i !== textIdx);
 
     const data = [];
@@ -69,7 +109,6 @@
       if (cols.length < headers.length) continue;
 
       const row = { id: cols[idIdx].trim(), text: cols[textIdx].trim() };
-      // Keep extra columns
       headers.forEach((h, j) => {
         if (j !== idIdx && j !== textIdx) row[h] = cols[j];
       });
@@ -81,9 +120,6 @@
     return data;
   }
 
-  /**
-   * Parse a single CSV line respecting quoted fields.
-   */
   function parseCSVLine(line) {
     const result = [];
     let current = '';
@@ -138,7 +174,6 @@
         clusterConfig.classList.add('visible');
         btnRun.disabled = false;
 
-        // Reset downstream state
         clusterResult = null;
         topicInfo = [];
         classifications = {};
@@ -154,7 +189,6 @@
     reader.readAsText(file);
   }
 
-  // Drop zone events
   dropZone.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
 
@@ -169,7 +203,6 @@
     handleFile(e.dataTransfer.files[0]);
   });
 
-  // Cluster mode toggle
   clusterModeSelect.addEventListener('change', () => {
     clusterKGroup.style.display = clusterModeSelect.value === 'manual' ? 'inline-flex' : 'none';
   });
@@ -182,6 +215,13 @@
 
   async function runPipeline() {
     if (rawData.length === 0) return;
+
+    // Validate worker URL
+    if (!ClaudeAPI.getWorkerUrl()) {
+      showError('Please configure your Worker URL before running the pipeline.');
+      return;
+    }
+
     hideError();
     btnRun.disabled = true;
     pipelineProgress.classList.add('visible');
@@ -189,7 +229,7 @@
     clusterViz.classList.remove('visible');
 
     try {
-      // ---- Stage 1: Embedding & Clustering ----
+      // ==== Stage 1: Embed → UMAP → HDBSCAN ====
       setStage(0);
       const texts = rawData.map(d => d.text);
 
@@ -198,62 +238,95 @@
       await tick();
 
       const rawEmbeddings = await ClaudeAPI.embedDocuments(texts, (batch, total) => {
-        const pct = Math.round((batch / total) * 40);
+        const pct = Math.round((batch / total) * 25);
         updateProgress(`Embedding batch ${batch} of ${total}...`, pct);
       });
 
-      updateProgress('Embeddings complete. Normalizing vectors...', 42);
+      updateProgress('Normalizing embedding vectors...', 27);
       await tick();
       const matrix = Clustering.normalizeEmbeddings(rawEmbeddings);
 
-      // Step 1b: Determine k and cluster
-      let k;
-      if (clusterModeSelect.value === 'auto') {
-        updateProgress('Auto-detecting optimal number of clusters (silhouette score)...', 45);
-        await tick();
-        k = Clustering.autoDetectK(matrix, 2, Math.min(15, Math.floor(rawData.length / 5)));
-        updateProgress(`Optimal k=${k} detected. Running K-means...`, 55);
-      } else {
-        k = parseInt(clusterKInput.value, 10) || 5;
-        k = Math.max(2, Math.min(k, 20, Math.floor(rawData.length / 2)));
-        updateProgress(`Running K-means with k=${k}...`, 50);
+      // Step 1b: UMAP dimensionality reduction
+      updateProgress('Running UMAP dimensionality reduction...', 30);
+      await tick();
+
+      const umapResult = Clustering.umap(matrix, {
+        nNeighbors: 15,
+        nComponents: 5,
+        minDist: 0.01,
+        nEpochs: 200,
+        onProgress: (step, detail) => {
+          const pctMap = { knn: 35, smooth: 45, optimize: 55 };
+          updateProgress(detail, pctMap[step] || 40);
+        },
+      });
+      const umapEmbedding = umapResult.embedding;
+
+      // Step 1c: HDBSCAN clustering
+      updateProgress('Running HDBSCAN clustering...', 60);
+      await tick();
+
+      const minClusterSize = clusterModeSelect.value === 'manual'
+        ? Math.max(2, parseInt(clusterKInput.value, 10) || 15)
+        : Math.max(5, Math.min(Math.floor(rawData.length / 20), 25));
+
+      const hdbResult = Clustering.hdbscan(umapEmbedding, {
+        minClusterSize,
+        onProgress: (step, detail) => {
+          updateProgress(detail, 65);
+        },
+      });
+
+      const { labels, nClusters } = hdbResult;
+
+      if (nClusters === 0) {
+        throw new Error(
+          'HDBSCAN found no clusters. Try adjusting min_cluster_size ' +
+          '(use manual mode with a smaller value) or adding more documents.'
+        );
       }
+
+      // Step 1d: Representative docs and term extraction
+      updateProgress(`Found ${nClusters} clusters. Extracting representative documents...`, 75);
       await tick();
 
-      const { labels, centroids } = Clustering.kmeans(matrix, k);
-      updateProgress('Clustering complete. Selecting representative documents...', 70);
+      const repDocs = Clustering.getRepresentativeDocs(umapEmbedding, labels, nClusters, 10);
+      const topTerms = Clustering.getTopTerms(texts, labels, nClusters, 10);
+
+      // Step 1e: 2D projection for visualization (PCA on UMAP output)
+      updateProgress('Projecting clusters for visualization...', 85);
       await tick();
+      const points2d = Clustering.projectTo2D(umapEmbedding);
 
-      const repDocs = Clustering.getRepresentativeDocs(matrix, labels, centroids, 10);
+      // Count noise points
+      const noiseCount = labels.filter(l => l === -1).length;
+      const clusterCount = labels.filter(l => l >= 0).length;
 
-      // Step 1c: Extract top terms per cluster (lightweight TF-IDF, for naming prompts only)
-      const topTerms = Clustering.getTopTerms(texts, labels, k, 10);
+      clusterResult = {
+        labels, nClusters, umapEmbedding, repDocs, topTerms, points2d,
+        noiseCount, clusterCount,
+      };
 
-      // Step 1d: PCA projection for visualisation
-      updateProgress('Projecting clusters for visualization...', 80);
-      await tick();
-      const points2d = Clustering.projectTo2D(matrix);
-
-      clusterResult = { labels, centroids, k, matrix, repDocs, topTerms, points2d };
-
-      updateProgress('Stage 1 complete.', 100);
+      updateProgress(
+        `Stage 1 complete: ${nClusters} clusters, ${noiseCount} noise points.`,
+        100
+      );
       completeStage(0);
       await tick();
 
-      // Draw cluster visualisation
       drawClusterViz();
 
-      // ---- Stage 2: Topic Naming ----
+      // ==== Stage 2: Topic Naming (Claude democratic voting) ====
       setStage(1);
       topicInfo = [];
 
-      for (let c = 0; c < k; c++) {
-        updateProgress(`Naming topic ${c + 1} of ${k}...`, Math.round((c / k) * 100));
+      for (let c = 0; c < nClusters; c++) {
+        updateProgress(`Naming topic ${c + 1} of ${nClusters}...`, Math.round((c / nClusters) * 100));
         const repTexts = repDocs[c].map(i => rawData[i].text);
-        const terms = topTerms[c];
+        const terms = topTerms[c] || [];
 
         const info = await ClaudeAPI.nameTopicDemocratic(repTexts, terms, c, (msg) => {
-          updateProgress(msg, Math.round(((c + 0.5) / k) * 100));
+          updateProgress(msg, Math.round(((c + 0.5) / nClusters) * 100));
         });
 
         topicInfo.push({ id: c, name: info.name, description: info.description, keywords: info.keywords });
@@ -263,13 +336,10 @@
       completeStage(1);
       await tick();
 
-      // ---- Stage 3: Document Classification ----
+      // ==== Stage 3: Document Classification (Claude) ====
       setStage(2);
       classifications = {};
 
-      // First, assign documents that are already clustered and near centroid
-      // using the k-means labels as initial classification
-      // Then refine with Claude for all documents in batches
       const BATCH_SIZE = 10;
       const totalBatches = Math.ceil(rawData.length / BATCH_SIZE);
 
@@ -287,23 +357,26 @@
           const batchResult = await ClaudeAPI.classifyBatch(batch, topicInfo);
           Object.assign(classifications, batchResult);
         } catch (err) {
-          console.warn(`Batch ${b + 1} classification failed, using cluster label:`, err);
-          // Fallback: use k-means label
+          console.warn(`Batch ${b + 1} classification failed, using HDBSCAN label:`, err);
           for (let i = start; i < end; i++) {
             const docId = rawData[i].id;
             if (!classifications[docId]) {
-              const label = clusterResult.labels[i];
-              classifications[docId] = topicInfo[label] ? topicInfo[label].name : `Topic ${label + 1}`;
+              const label = labels[i];
+              classifications[docId] = label >= 0 && topicInfo[label]
+                ? topicInfo[label].name
+                : 'Unclassified';
             }
           }
         }
       }
 
-      // Fill any missing classifications with k-means labels
+      // Fill any missing
       rawData.forEach((d, i) => {
         if (!classifications[d.id]) {
-          const label = clusterResult.labels[i];
-          classifications[d.id] = topicInfo[label] ? topicInfo[label].name : `Topic ${label + 1}`;
+          const label = labels[i];
+          classifications[d.id] = label >= 0 && topicInfo[label]
+            ? topicInfo[label].name
+            : 'Unclassified';
         }
       });
 
@@ -311,7 +384,6 @@
       completeStage(2);
       await tick();
 
-      // ---- Render Results ----
       renderResults();
 
     } catch (err) {
@@ -353,7 +425,6 @@
     errorBanner.classList.remove('visible');
   }
 
-  /** Yield to the event loop so the browser can repaint. */
   function tick() {
     return new Promise(resolve => setTimeout(resolve, 20));
   }
@@ -384,8 +455,8 @@
 
     const points = clusterResult.points2d;
     const labels = clusterResult.labels;
+    const k = clusterResult.nClusters;
 
-    // Find bounds
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     points.forEach(p => {
       if (p.x < minX) minX = p.x;
@@ -403,30 +474,32 @@
       '#00b894', '#636e72', '#fd79a8', '#6c5ce7', '#ffeaa7',
       '#dfe6e9', '#fab1a0', '#74b9ff', '#a29bfe', '#55efc4',
     ];
+    const NOISE_COLOR = '#cccccc';
 
     // Draw points
     points.forEach((p, i) => {
       const x = padding + ((p.x - minX) / rangeX) * (W - 2 * padding);
       const y = padding + ((p.y - minY) / rangeY) * (H - 2 * padding);
-      const color = COLORS[labels[i] % COLORS.length];
+      const isNoise = labels[i] === -1;
+      const color = isNoise ? NOISE_COLOR : COLORS[labels[i] % COLORS.length];
 
       ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.arc(x, y, isNoise ? 2.5 : 4, 0, Math.PI * 2);
       ctx.fillStyle = color;
-      ctx.globalAlpha = 0.7;
+      ctx.globalAlpha = isNoise ? 0.3 : 0.7;
       ctx.fill();
       ctx.globalAlpha = 1;
     });
 
     // Legend
-    const k = clusterResult.k;
-    const legendX = W - 160;
+    const legendItems = k + (clusterResult.noiseCount > 0 ? 1 : 0);
+    const legendX = W - 170;
     let legendY = 20;
 
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fillRect(legendX - 10, legendY - 10, 160, k * 22 + 16);
+    ctx.fillRect(legendX - 10, legendY - 10, 170, legendItems * 22 + 16);
     ctx.strokeStyle = '#dee2e6';
-    ctx.strokeRect(legendX - 10, legendY - 10, 160, k * 22 + 16);
+    ctx.strokeRect(legendX - 10, legendY - 10, 170, legendItems * 22 + 16);
 
     for (let c = 0; c < k; c++) {
       const color = COLORS[c % COLORS.length];
@@ -438,8 +511,19 @@
       ctx.fillStyle = '#343a40';
       ctx.font = '12px -apple-system, sans-serif';
       const label = topicInfo[c] ? topicInfo[c].name : `Cluster ${c + 1}`;
-      ctx.fillText(label.slice(0, 18), legendX + 12, legendY + 10);
+      ctx.fillText(label.slice(0, 20), legendX + 12, legendY + 10);
       legendY += 22;
+    }
+
+    if (clusterResult.noiseCount > 0) {
+      ctx.fillStyle = NOISE_COLOR;
+      ctx.beginPath();
+      ctx.arc(legendX, legendY + 6, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#999';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.fillText(`Noise (${clusterResult.noiseCount})`, legendX + 12, legendY + 10);
     }
   }
 
@@ -450,7 +534,6 @@
   function renderResults() {
     resultsSection.classList.add('visible');
 
-    // Topic cards
     topicCards.innerHTML = '';
     topicInfo.forEach(topic => {
       const count = rawData.filter(d => classifications[d.id] === topic.name).length;
@@ -469,10 +552,8 @@
       topicCards.appendChild(card);
     });
 
-    // Re-draw viz with topic names now available
     drawClusterViz();
 
-    // Documents table (show first 100)
     resultsTableBody.innerHTML = '';
     const displayDocs = rawData.slice(0, 100);
     displayDocs.forEach(d => {
@@ -485,7 +566,6 @@
       resultsTableBody.appendChild(tr);
     });
 
-    // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 

@@ -434,6 +434,51 @@ nav a:hover {
   border-color: var(--gold);
 }
 
+/* Worker URL config */
+.worker-config {
+  max-width: 640px;
+  margin: 0 auto 24px;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: 24px 32px;
+  border: 1px solid var(--gray-200);
+}
+
+.worker-config label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--navy);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.worker-url-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: var(--white);
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.worker-url-input:focus {
+  border-color: var(--gold);
+}
+
+.worker-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-500);
+}
+
+.worker-status.connected {
+  color: #27ae60;
+}
+
 .btn-primary {
   background: var(--navy);
   color: var(--white);

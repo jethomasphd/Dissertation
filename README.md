@@ -17,7 +17,7 @@ A browser-based implementation of the Embedding-to-Explanation (E2E) topic model
 
 **Stack:** HTML/CSS/JS, Cloudflare Pages + Pages Functions, Voyage AI, Claude API
 
-### [E2E Python Pipeline](topic_flow/) — Research Implementation
+### [E2E Python Pipeline](e2e/) — Research Implementation
 
 The production-grade Python implementation of the same E2E methodology, used for the dissertation research. Combines BERTopic with LLM interpretation for research-quality results with hyperparameter optimization across 1,200 candidate models.
 
@@ -34,7 +34,7 @@ Documents → Embed → Cluster → LLM Name (democratic voting) → LLM Classif
 | Stage | Web App | Python Pipeline |
 |-------|---------|----------------|
 | Embedding | Voyage AI (voyage-3) | SentenceTransformer (all-MiniLM-L6-v2) |
-| Clustering | K-means + silhouette | HDBSCAN + UMAP + c_v coherence |
+| Clustering | HDBSCAN (EOM) on UMAP-reduced space | HDBSCAN + UMAP + c_v coherence |
 | Naming | Claude (5 votes) | GPT-4o (5,000 votes) |
 | Classification | Claude | GPT-4o |
 
@@ -45,7 +45,7 @@ Generated research outputs in `deliverables/`:
 | File | Description | Generator |
 |------|-------------|-----------|
 | `the_drinking_age.docx` | Popular history book on alcohol marketing | `generate_book.py` |
-| `topicflow_methods_paper.docx` | E2E methodology paper | `generate_methods_paper.py` |
+| `e2e_methods_paper.docx` | E2E methodology paper | `generate_methods_paper.py` |
 | `brief_report_study1.docx` | Study 1 brief report | `generate_brief_report_1.py` |
 | `brief_report_study2.docx` | Study 2 brief report | `generate_brief_report_2.py` |
 | `email_to_pasch.docx` | Publication discussion email | `generate_email.py` |

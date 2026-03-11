@@ -55,10 +55,10 @@ pip install bertopic sentence-transformers umap-learn hdbscan gensim nltk scikit
 ### Python API
 
 ```python
-from topicflow import TopicFlowPipeline
+from e2e import E2EPipeline
 
 # Initialize
-pipeline = TopicFlowPipeline(
+pipeline = E2EPipeline(
     domain_context="tweets about public health",
     n_iterations=10,    # 50 for full optimization
     n_votes=50,         # 5000 for full democratic naming
@@ -84,7 +84,7 @@ pipeline.save("output/")
 
 ```bash
 # Full pipeline
-topicflow run data.csv \
+e2e run data.csv \
     --text-column "text" \
     --domain-context "social media posts about health" \
     --n-iterations 50 \
@@ -92,7 +92,7 @@ topicflow run data.csv \
     --output-dir results/
 
 # Classify with known themes
-topicflow classify data.csv \
+e2e classify data.csv \
     --text-column "text" \
     --themes "Health" "Politics" "Sports" \
     --output classified.csv
@@ -101,10 +101,10 @@ topicflow classify data.csv \
 ### Using Individual Components
 
 ```python
-from topicflow.preprocessing import preprocess_corpus
-from topicflow.modeling import TopicModeler
-from topicflow.naming import TopicNamer
-from topicflow.classifier import TopicClassifier
+from e2e.preprocessing import preprocess_corpus
+from e2e.modeling import TopicModeler
+from e2e.naming import TopicNamer
+from e2e.classifier import TopicClassifier
 
 # Stage 1: Preprocessing
 docs = preprocess_corpus(raw_documents, custom_stopwords={"brandname", "rt"})

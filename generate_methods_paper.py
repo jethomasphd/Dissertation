@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Generate the TopicFlow methodology paper as a Word document.
+Generate the E2E methodology paper as a Word document.
 
-Produces: /home/user/Dissertation/deliverables/topicflow_methods_paper.docx
+Produces: /home/user/Dissertation/deliverables/e2e_methods_paper.docx
 """
 
 import os
@@ -106,7 +106,7 @@ def build_document():
     # =========================================================================
     # TITLE
     # =========================================================================
-    add_paragraph(doc, "TopicFlow: A BERTopic and Large Language Model Pipeline\nfor Topic Discovery and Classification",
+    add_paragraph(doc, "E2E: A BERTopic and Large Language Model Pipeline\nfor Topic Discovery and Classification",
                   size=16, bold=True, alignment=WD_ALIGN_PARAGRAPH.CENTER,
                   space_before=24, space_after=12)
 
@@ -125,7 +125,7 @@ def build_document():
     body(doc,
          "Topic modeling is foundational to computational text analysis, yet existing approaches "
          "often require extensive manual interpretation or lack systematic validation. This paper "
-         "presents TopicFlow, an open-source three-stage pipeline that integrates BERTopic-based "
+         "presents E2E, an open-source three-stage pipeline that integrates BERTopic-based "
          "topic modeling with large language model (LLM) interpretation and classification. "
          "Stage 1 employs BERTopic with automated hyperparameter optimization across UMAP and "
          "HDBSCAN parameter spaces, evaluating models using c_v coherence scores. Stage 2 "
@@ -136,14 +136,14 @@ def build_document():
          "corpus into the discovered themes, validated against human-labeled subsets with a "
          "configurable agreement threshold. The pipeline was developed and validated in the "
          "context of social media content analysis, where it successfully identified interpretable "
-         "thematic patterns in approximately 6,000 tweets. TopicFlow is designed for "
+         "thematic patterns in approximately 6,000 tweets. E2E is designed for "
          "generalizability: given any text corpus, it produces optimized topic models, "
          "human-interpretable topic names, and validated document classifications through a "
          "unified, reproducible workflow. The methodology addresses key limitations of existing "
          "approaches by automating the computationally intensive aspects of topic modeling while "
          "preserving human interpretability through LLM-augmented naming and classification. "
-         "TopicFlow is available as an open-source Python package with both programmatic and "
-         "command-line interfaces. Software repository: https://github.com/jethomasphd/topicflow",
+         "E2E is available as an open-source Python package with both programmatic and "
+         "command-line interfaces. Software repository: https://github.com/jethomasphd/e2e",
          indent=False)
 
     add_rich_paragraph(doc, [
@@ -190,8 +190,8 @@ def build_document():
          "classification into a single, reproducible pipeline.")
 
     body(doc,
-         "This paper presents TopicFlow, an open-source Python package that addresses this gap "
-         "through a unified three-stage pipeline. TopicFlow automates hyperparameter optimization "
+         "This paper presents E2E, an open-source Python package that addresses this gap "
+         "through a unified three-stage pipeline. E2E automates hyperparameter optimization "
          "for BERTopic models, introduces a novel democratic LLM naming procedure that reduces "
          "individual inference bias, and provides a validated LLM classification framework for "
          "scaling thematic analysis to large corpora. The pipeline is designed to be generalizable "
@@ -205,7 +205,7 @@ def build_document():
     add_section_header(doc, "2. Methodology")
 
     body(doc,
-         "TopicFlow consists of three sequential stages, each building on the outputs of the "
+         "E2E consists of three sequential stages, each building on the outputs of the "
          "previous stage. This section describes the design and rationale of each stage in detail.",
          indent=False)
 
@@ -213,7 +213,7 @@ def build_document():
     add_section_header(doc, "2.1 Stage 1: BERTopic with Hyperparameter Optimization", level=2)
 
     body(doc,
-         "The first stage of the TopicFlow pipeline discovers latent topics in a text corpus "
+         "The first stage of the E2E pipeline discovers latent topics in a text corpus "
          "through BERTopic modeling with automated hyperparameter optimization. The process "
          "begins with text preprocessing, which includes cleaning (removal of URLs, mentions, "
          "special characters, and excess whitespace), tokenization, stopword removal using both "
@@ -251,7 +251,7 @@ def build_document():
          "The second stage addresses the challenge of transforming statistical topic "
          "representations into human-interpretable labels. Traditional approaches require domain "
          "experts to manually inspect topic\u2013word lists and assign descriptive names, a process "
-         "that is subjective, time-consuming, and difficult to reproduce. TopicFlow introduces a "
+         "that is subjective, time-consuming, and difficult to reproduce. E2E introduces a "
          "democratic LLM naming procedure that automates this step while mitigating the "
          "stochasticity inherent in individual LLM inferences.")
 
@@ -286,7 +286,7 @@ def build_document():
          "and requests a single-label classification.")
 
     body(doc,
-         "To ensure classification quality, TopicFlow incorporates a human-in-the-loop validation "
+         "To ensure classification quality, E2E incorporates a human-in-the-loop validation "
          "framework. A random subset of documents is independently labeled by human annotators, "
          "and LLM classifications are compared against this ground truth. A configurable agreement "
          "threshold (default: >85%) determines whether the classification is accepted. If "
@@ -308,7 +308,7 @@ def build_document():
     add_section_header(doc, "3. Implementation")
 
     body(doc,
-         "TopicFlow is implemented as a modular Python package designed for both ease of use and "
+         "E2E is implemented as a modular Python package designed for both ease of use and "
          "extensibility. The package is organized into five core modules: preprocessing (text "
          "cleaning, tokenization, lemmatization, and stopword handling), modeling (BERTopic model "
          "construction, hyperparameter search, and coherence evaluation), naming (democratic LLM "
@@ -329,8 +329,8 @@ def build_document():
          "al., 2020), UMAP-learn (McInnes et al., 2018), HDBSCAN (Campello et al., 2013), "
          "Gensim for coherence calculation (Rehurek & Sojka, 2010), the OpenAI Python client for "
          "LLM access, NLTK for text preprocessing, and standard scientific Python libraries "
-         "(NumPy, pandas, scikit-learn). TopicFlow is released under the MIT License and is "
-         "available on GitHub at https://github.com/jethomasphd/topicflow. Installation is "
+         "(NumPy, pandas, scikit-learn). E2E is released under the MIT License and is "
+         "available on GitHub at https://github.com/jethomasphd/e2e. Installation is "
          "supported via pip, with optional dependency groups for development and testing.")
 
     # =========================================================================
@@ -339,7 +339,7 @@ def build_document():
     add_section_header(doc, "4. Validation")
 
     body(doc,
-         "The TopicFlow pipeline was developed and validated in the context of a doctoral "
+         "The E2E pipeline was developed and validated in the context of a doctoral "
          "research study analyzing social media marketing content from major alcohol brands. The "
          "corpus consisted of approximately 6,000 tweets collected from the official Twitter "
          "accounts of 11 major alcohol brands over the period from January 2019 to July 2021. "
@@ -365,7 +365,7 @@ def build_document():
          "Agreement between LLM classifications and human labels exceeded the 85% threshold, "
          "confirming classification quality. The seven discovered topics were subsequently "
          "synthesized by the research team into five interpretable themes for final analysis. "
-         "This end-to-end validation demonstrates TopicFlow\u2019s ability to discover coherent "
+         "This end-to-end validation demonstrates E2E\u2019s ability to discover coherent "
          "topics, generate meaningful labels, and accurately classify documents at scale.")
 
     # =========================================================================
@@ -374,7 +374,7 @@ def build_document():
     add_section_header(doc, "5. Discussion")
 
     body(doc,
-         "TopicFlow makes several contributions to the computational text analysis landscape. "
+         "E2E makes several contributions to the computational text analysis landscape. "
          "First, it provides a unified, reproducible pipeline that integrates topic discovery, "
          "interpretation, and classification \u2014 steps that have traditionally been performed using "
          "disconnected tools requiring substantial manual intervention. Second, the democratic "
@@ -389,7 +389,7 @@ def build_document():
     body(doc,
          "The validation framework in Stage 3 deserves particular emphasis. By requiring "
          "agreement between LLM classifications and human-labeled subsets before accepting "
-         "automated results, TopicFlow ensures that scalability does not come at the expense of "
+         "automated results, E2E ensures that scalability does not come at the expense of "
          "quality. The configurable agreement threshold allows researchers to calibrate this "
          "trade-off according to the requirements of their specific application.")
 
@@ -415,7 +415,7 @@ def build_document():
     add_section_header(doc, "6. Conclusion")
 
     body(doc,
-         "TopicFlow provides a reproducible, generalizable framework for topic discovery and "
+         "E2E provides a reproducible, generalizable framework for topic discovery and "
          "classification that addresses critical gaps in existing computational text analysis "
          "methodologies. By combining the representational power of transformer-based embeddings "
          "with the interpretive capabilities of large language models, it bridges the gap between "
@@ -428,7 +428,7 @@ def build_document():
          "methodology to any text corpus, from social media data to scientific literature to "
          "policy documents. As large language models continue to improve in capability and "
          "accessibility, the integration of LLM-augmented interpretation into topic modeling "
-         "pipelines represents a promising direction for computational text analysis. TopicFlow "
+         "pipelines represents a promising direction for computational text analysis. E2E "
          "offers a concrete, validated instantiation of this approach.")
 
     # =========================================================================
@@ -495,7 +495,7 @@ def main():
     output_dir = "/home/user/Dissertation/deliverables"
     os.makedirs(output_dir, exist_ok=True)
 
-    output_path = os.path.join(output_dir, "topicflow_methods_paper.docx")
+    output_path = os.path.join(output_dir, "e2e_methods_paper.docx")
     doc = build_document()
     doc.save(output_path)
     print(f"Methods paper saved to: {output_path}")

@@ -1,5 +1,5 @@
 """
-TopicFlow end-to-end pipeline.
+E2E end-to-end pipeline.
 
 Orchestrates the three stages:
   1. BERTopic modeling with hyperparameter optimization
@@ -13,18 +13,18 @@ from typing import Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 
-from topicflow.modeling import TopicModeler, OptimizationResult
-from topicflow.naming import TopicNamer
-from topicflow.classifier import TopicClassifier
-from topicflow.preprocessing import preprocess_corpus
+from e2e.modeling import TopicModeler, OptimizationResult
+from e2e.naming import TopicNamer
+from e2e.classifier import TopicClassifier
+from e2e.preprocessing import preprocess_corpus
 
 
-class TopicFlowPipeline:
+class E2EPipeline:
     """
-    End-to-end TopicFlow pipeline.
+    End-to-end E2E pipeline.
 
     Usage:
-        pipeline = TopicFlowPipeline(
+        pipeline = E2EPipeline(
             domain_context="tweets about health policy",
             openai_api_key="sk-...",
         )

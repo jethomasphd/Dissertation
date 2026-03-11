@@ -1,8 +1,13 @@
-# Standalone Worker config (alternative to Pages Functions deployment)
-# Only use this if you need to deploy the API proxy as a separate worker.
+# E2E Topic Modeler — Cloudflare Worker
+# Proxies requests to both Anthropic Claude API and Voyage AI API.
+#
+# Deploy: cd worker && wrangler deploy
+# Secrets: wrangler secret put ANTHROPIC_API_KEY
+#          wrangler secret put VOYAGE_API_KEY
 name = "e2e-topic-modeler-api"
 main = "index.js"
 compatibility_date = "2024-12-01"
 
 [vars]
 # ANTHROPIC_API_KEY is set via `wrangler secret put ANTHROPIC_API_KEY`
+# VOYAGE_API_KEY is set via `wrangler secret put VOYAGE_API_KEY`
