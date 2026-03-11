@@ -1,23 +1,88 @@
 /**
- * E2E Topic Modeler — Claude API Module
- * Handles all communication with the Cloudflare Worker proxy to the Claude API.
+ * E2E Topic Modeler — API Module
+ * Handles all communication with the Cloudflare Pages Function proxies:
+ *   POST /api        → Claude API  (topic naming & classification)
+ *   POST /api/embed  → Voyage AI   (document embeddings)
  */
 
 const ClaudeAPI = (() => {
   'use strict';
 
-  // The worker endpoint — when deployed to Cloudflare Pages + Worker,
-  // the worker is bound at /api/.  For local dev you can override this.
-  let API_ENDPOINT = '/api/';
+  // Endpoints — Pages Functions handle these routes automatically.
+  let CLAUDE_ENDPOINT = '/api/';
+  let EMBED_ENDPOINT  = '/api/embed';
 
-  const MODEL = 'claude-sonnet-4-5-20250514';
+  const CLAUDE_MODEL  = 'claude-sonnet-4-5-20250514';
+  const VOYAGE_MODEL  = 'voyage-3';
+  const EMBED_BATCH   = 96; // Voyage API supports up to 128 inputs; leave headroom
 
   /**
-   * Override the API endpoint (useful for local development).
+   * Override endpoints (useful for local development).
    */
-  function setEndpoint(url) {
-    API_ENDPOINT = url;
+  function setEndpoints({ claude, embed } = {}) {
+    if (claude) CLAUDE_ENDPOINT = claude;
+    if (embed)  EMBED_ENDPOINT  = embed;
   }
+
+  // =========================================================================
+  // Voyage AI Embeddings
+  // =========================================================================
+
+  /**
+   * Embed an array of document texts using Voyage AI.
+   * Automatically batches to stay within API limits.
+   *
+   * @param {string[]} texts - documents to embed
+   * @param {Function} [onProgress] - called with (batchIndex, totalBatches)
+   * @returns {Promise<number[][]>} array of embedding vectors
+   */
+  async function embedDocuments(texts, onProgress) {
+    const allEmbeddings = new Array(texts.length);
+    const totalBatches = Math.ceil(texts.length / EMBED_BATCH);
+
+    for (let b = 0; b < totalBatches; b++) {
+      const start = b * EMBED_BATCH;
+      const end = Math.min(start + EMBED_BATCH, texts.length);
+      const batch = texts.slice(start, end);
+
+      if (onProgress) onProgress(b + 1, totalBatches);
+
+      const resp = await fetch(EMBED_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: batch,
+          model: VOYAGE_MODEL,
+          input_type: 'document',
+        }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Embedding API error (${resp.status}): ${text}`);
+      }
+
+      const data = await resp.json();
+
+      if (data.error) {
+        throw new Error(`Voyage API error: ${data.error}`);
+      }
+
+      if (!data.embeddings || data.embeddings.length !== batch.length) {
+        throw new Error(`Expected ${batch.length} embeddings, got ${(data.embeddings || []).length}`);
+      }
+
+      for (let i = 0; i < data.embeddings.length; i++) {
+        allEmbeddings[start + i] = data.embeddings[i];
+      }
+    }
+
+    return allEmbeddings;
+  }
+
+  // =========================================================================
+  // Claude Messages
+  // =========================================================================
 
   /**
    * Send a message to Claude via the worker proxy.
@@ -30,14 +95,14 @@ const ClaudeAPI = (() => {
    */
   async function sendMessage({ system, messages, maxTokens = 1024, temperature = 0.3 }) {
     const body = {
-      model: MODEL,
+      model: CLAUDE_MODEL,
       max_tokens: maxTokens,
       messages,
       temperature,
     };
     if (system) body.system = system;
 
-    const resp = await fetch(API_ENDPOINT, {
+    const resp = await fetch(CLAUDE_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -54,7 +119,6 @@ const ClaudeAPI = (() => {
       throw new Error(`Claude API error: ${data.error.message || JSON.stringify(data.error)}`);
     }
 
-    // Extract text from content blocks
     if (data.content && Array.isArray(data.content)) {
       return data.content
         .filter(b => b.type === 'text')
@@ -72,12 +136,6 @@ const ClaudeAPI = (() => {
   /**
    * Name a single topic cluster by sending representative documents to Claude
    * five times and taking a majority vote on the topic name.
-   *
-   * @param {string[]} repTexts - representative document texts for this cluster
-   * @param {string[]} topTerms - top TF-IDF terms for this cluster
-   * @param {number} clusterId
-   * @param {Function} [onProgress] - called with intermediate status
-   * @returns {Promise<{name: string, description: string, keywords: string[]}>}
    */
   async function nameTopicDemocratic(repTexts, topTerms, clusterId, onProgress) {
     const systemPrompt = `You are an expert qualitative researcher performing topic modeling analysis. You will be given a set of representative documents from a single cluster along with the most frequent terms. Your job is to name the topic and provide a brief description.
@@ -139,8 +197,6 @@ Please name this topic and describe what it's about.`;
     });
 
     let majorityKey = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
-
-    // Find the result that matches the majority name
     const winner = results.find(r => r.name.trim().toLowerCase() === majorityKey) || results[0];
 
     return {
@@ -156,10 +212,6 @@ Please name this topic and describe what it's about.`;
 
   /**
    * Classify a batch of documents into the discovered topics.
-   *
-   * @param {Array<{id: string, text: string}>} docs - batch of documents
-   * @param {Array<{id: number, name: string, description: string}>} topics
-   * @returns {Promise<Object<string, string>>} mapping of doc id -> topic name
    */
   async function classifyBatch(docs, topics) {
     const topicList = topics.map(t => `- "${t.name}": ${t.description}`).join('\n');
@@ -202,11 +254,7 @@ Do not include any text outside the JSON array.`;
   // Helpers
   // =========================================================================
 
-  /**
-   * Robustly parse JSON from Claude's response, handling markdown fences.
-   */
   function parseJSON(text) {
-    // Strip markdown code fences if present
     let cleaned = text.trim();
     cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
     cleaned = cleaned.trim();
@@ -214,7 +262,6 @@ Do not include any text outside the JSON array.`;
     try {
       return JSON.parse(cleaned);
     } catch {
-      // Try to find JSON object or array in the text
       const objMatch = cleaned.match(/\{[\s\S]*\}/);
       const arrMatch = cleaned.match(/\[[\s\S]*\]/);
 
@@ -235,7 +282,8 @@ Do not include any text outside the JSON array.`;
   // =========================================================================
 
   return {
-    setEndpoint,
+    setEndpoints,
+    embedDocuments,
     sendMessage,
     nameTopicDemocratic,
     classifyBatch,

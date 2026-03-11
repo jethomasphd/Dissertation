@@ -2,7 +2,7 @@
 
 **Embedding-to-Explanation Topic Modeling — A Browser-Based Tool**
 
-An interactive web application that performs end-to-end topic modeling entirely in the browser. Upload a CSV of text documents, and the tool will embed, cluster, name, and classify them — no coding required.
+An interactive web application that implements the E2E topic modeling methodology. Upload a CSV of text documents, and the tool will embed them with Voyage AI, cluster them, name topics with Claude (democratic voting), and classify every document — no coding required.
 
 ## Architecture
 
@@ -11,27 +11,31 @@ An interactive web application that performs end-to-end topic modeling entirely 
 │  Browser (static site on Cloudflare Pages)               │
 │                                                          │
 │  1. Upload CSV  →  Parse id + text columns               │
-│  2. TF-IDF vectorization  (pure JS, runs locally)        │
-│  3. K-means clustering    (pure JS, runs locally)        │
-│  4. PCA visualization     (pure JS, runs locally)        │
+│  2. POST /api/embed  →  Voyage AI embeddings (voyage-3)  │
+│  3. L2-normalize embedding vectors                       │
+│  4. K-means clustering with cosine similarity (local JS) │
+│  5. Silhouette score for auto-k detection (local JS)     │
+│  6. TF-IDF term extraction per cluster (local JS)        │
+│  7. PCA projection for visualization (local JS)          │
 │                                                          │
-│  5. Topic Naming      →  POST /api  →  Claude API        │
-│  6. Classification    →  POST /api  →  Claude API        │
+│  8. Topic Naming      →  POST /api  →  Claude API        │
+│     (5 votes per topic, majority wins)                   │
+│  9. Classification    →  POST /api  →  Claude API        │
+│     (batches of 10 documents)                            │
 │                                                          │
-│  7. Display results + download CSV                       │
-└────────────────────┬─────────────────────────────────────┘
-                     │
-        ┌────────────▼─────────────┐
-        │  Pages Function (/api)   │
-        │  functions/api.js        │
-        │  Injects ANTHROPIC_API_KEY│
-        │  Proxies to Anthropic    │
-        └────────────┬─────────────┘
-                     │
-        ┌────────────▼─────────────┐
-        │  Anthropic Claude API    │
-        │  claude-sonnet-4-5       │
-        └──────────────────────────┘
+│  10. Display results + download CSV                      │
+└────────────────┬──────────────────┬──────────────────────┘
+                 │                  │
+    ┌────────────▼───────┐  ┌──────▼──────────────┐
+    │  /api (Claude)     │  │  /api/embed (Voyage) │
+    │  Pages Function    │  │  Pages Function      │
+    │  ANTHROPIC_API_KEY │  │  VOYAGE_API_KEY      │
+    └────────────┬───────┘  └──────┬──────────────┘
+                 │                  │
+    ┌────────────▼───────┐  ┌──────▼──────────────┐
+    │  Anthropic API     │  │  Voyage AI API       │
+    │  Claude Sonnet     │  │  voyage-3            │
+    └────────────────────┘  └─────────────────────┘
 ```
 
 ## Project Structure
@@ -43,13 +47,15 @@ e2e-topic-modeler/
 │   ├── css/style.css        ← Navy/gold theme
 │   └── js/
 │       ├── app.js           ← Pipeline orchestration, CSV parsing, results
-│       ├── clustering.js    ← TF-IDF, K-means, PCA (pure JavaScript)
-│       └── claude.js        ← Claude API communication via /api proxy
+│       ├── clustering.js    ← K-means, silhouette, PCA, term extraction
+│       └── claude.js        ← API communication (Voyage embeddings + Claude)
 ├── functions/               ← Cloudflare Pages Functions
-│   └── api.js               ← POST /api → proxies to Anthropic Claude API
+│   └── api/
+│       ├── index.js         ← POST /api → proxies to Anthropic Claude API
+│       └── embed.js         ← POST /api/embed → proxies to Voyage AI API
 ├── worker/                  ← Legacy standalone worker (alternative deploy)
-│   ├── index.js             ← Same proxy logic as functions/api.js
-│   └── wrangler.toml        ← Config for standalone worker deployment
+│   ├── index.js
+│   └── wrangler.toml
 ├── package.json             ← npm scripts for dev and deploy
 ├── wrangler.toml            ← Pages project config
 └── README.md                ← This file
@@ -59,13 +65,13 @@ e2e-topic-modeler/
 
 | Stage | What happens | Where it runs |
 |-------|-------------|---------------|
-| **1. Embed & Cluster** | TF-IDF vectorization → K-means with cosine similarity → PCA projection | Browser (local) |
-| **2. Name Topics** | Representative docs + top terms sent to Claude 5× per cluster, majority vote on name | Claude API via /api |
+| **1. Embed & Cluster** | Voyage AI (voyage-3) embeddings → L2-normalize → K-means with cosine similarity → PCA projection | Voyage API + browser (local) |
+| **2. Name Topics** | Representative docs + top TF-IDF terms sent to Claude 5x per cluster, majority vote on name | Claude API via /api |
 | **3. Classify Documents** | Each document classified into discovered topics in batches of 10 | Claude API via /api |
 
 ## Deployment
 
-This project is designed to deploy as a **single Cloudflare Pages project** with Pages Functions. See the main README for step-by-step Cloudflare portal instructions.
+This project deploys as a **single Cloudflare Pages project** with Pages Functions. See the main repo README for step-by-step Cloudflare portal instructions.
 
 ### Quick Deploy (CLI)
 
@@ -75,27 +81,25 @@ npm install
 npx wrangler pages deploy public/ --project-name=e2e-topic-modeler
 ```
 
-Then set your API key in the Cloudflare dashboard under Pages → Settings → Environment variables.
+Then set your API keys in the Cloudflare dashboard under Pages > Settings > Environment variables.
 
 ### Local Development
 
 ```bash
 cd e2e-topic-modeler
 npm install
-npm run dev
+ANTHROPIC_API_KEY=sk-ant-... VOYAGE_API_KEY=pa-... npm run dev
 # Opens at http://localhost:8788
-```
-
-For local dev, set the environment variable:
-```bash
-ANTHROPIC_API_KEY=sk-ant-... npm run dev
 ```
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude access. Set as encrypted in Pages dashboard. |
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude (topic naming + classification) |
+| `VOYAGE_API_KEY` | Yes | Voyage AI API key for document embeddings (voyage-3) |
+
+Both must be set as **encrypted** environment variables in the Cloudflare Pages dashboard.
 
 ## CSV Format
 
