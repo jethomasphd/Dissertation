@@ -1,0 +1,8 @@
+# Standalone Worker config (alternative to Pages Functions deployment)
+# Only use this if you need to deploy the API proxy as a separate worker.
+name = "e2e-topic-modeler-api"
+main = "index.js"
+compatibility_date = "2024-12-01"
+
+[vars]
+# ANTHROPIC_API_KEY is set via `wrangler secret put ANTHROPIC_API_KEY`

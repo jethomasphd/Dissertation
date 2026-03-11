@@ -1,6 +1,17 @@
-name = "e2e-topic-modeler-api"
-main = "worker/index.js"
-compatibility_date = "2024-01-01"
+# E2E Topic Modeler — Cloudflare Pages Configuration
+# Deploy via: Cloudflare Dashboard → Pages → Connect to Git
+# Or via CLI: npx wrangler pages deploy public/ --project-name=e2e-topic-modeler
 
-[vars]
-# ANTHROPIC_API_KEY is set via `wrangler secret put ANTHROPIC_API_KEY`
+name = "e2e-topic-modeler"
+compatibility_date = "2024-12-01"
+
+# Pages Functions (functions/api.js) are deployed automatically
+# when the functions/ directory exists alongside the build output.
+
+# Environment variables:
+#   ANTHROPIC_API_KEY — set via Dashboard → Pages → Settings → Environment variables (encrypted)
+
+# --- Legacy standalone worker config (kept for reference) ---
+# To deploy the worker separately instead of using Pages Functions:
+#   name = "e2e-topic-modeler-api"
+#   main = "worker/index.js"
