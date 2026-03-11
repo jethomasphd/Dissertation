@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="topicflow",
-    version="1.0.0",
-    description="BERTopic + LLM Topic Modeling Pipeline: Automated topic discovery, LLM-based naming, and corpus classification.",
+    name="e2e-topics",
+    version="2.0.0",
+    description="E2E: Embedding-to-Explanation Topic Modeling Pipeline — BERTopic + LLM for topic discovery and classification.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     author="Jacob Edward Thomas",
     author_email="jacob.thomas@utexas.edu",
-    url="https://github.com/jethomasphd/topicflow",
+    url="https://github.com/jethomasphd/e2e",
     packages=find_packages(),
     python_requires=">=3.9",
     install_requires=[
@@ -27,7 +27,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "topicflow=topicflow.cli:main",
+            "e2e=e2e.cli:main",
         ],
     },
     classifiers=[

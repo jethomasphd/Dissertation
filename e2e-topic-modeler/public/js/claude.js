@@ -1,27 +1,31 @@
 /**
  * E2E Topic Modeler — API Module
- * Handles all communication with the Cloudflare Pages Function proxies:
- *   POST /api        → Claude API  (topic naming & classification)
- *   POST /api/embed  → Voyage AI   (document embeddings)
+ * Handles all communication with the Cloudflare Worker:
+ *   POST <workerUrl>/chat   → Claude API  (topic naming & classification)
+ *   POST <workerUrl>/embed  → Voyage AI   (document embeddings)
+ *
+ * The worker URL must be set via setWorkerUrl() before making API calls.
  */
 
 const ClaudeAPI = (() => {
   'use strict';
 
-  // Endpoints — Pages Functions handle these routes automatically.
-  let CLAUDE_ENDPOINT = '/api/';
-  let EMBED_ENDPOINT  = '/api/embed';
-
-  const CLAUDE_MODEL  = 'claude-sonnet-4-5-20250514';
-  const VOYAGE_MODEL  = 'voyage-3';
-  const EMBED_BATCH   = 96; // Voyage API supports up to 128 inputs; leave headroom
+  let WORKER_URL  = '';          // e.g. "https://e2e-topic-modeler-api.you.workers.dev"
+  const CLAUDE_MODEL = 'claude-sonnet-4-5-20250514';
+  const VOYAGE_MODEL = 'voyage-3';
+  const EMBED_BATCH  = 96;      // Voyage supports 128; leave headroom
 
   /**
-   * Override endpoints (useful for local development).
+   * Set the worker base URL.
+   * @param {string} url - full URL without trailing slash
    */
-  function setEndpoints({ claude, embed } = {}) {
-    if (claude) CLAUDE_ENDPOINT = claude;
-    if (embed)  EMBED_ENDPOINT  = embed;
+  function setWorkerUrl(url) {
+    WORKER_URL = url.replace(/\/+$/, '');
+  }
+
+  /** Return the current worker URL (for UI display). */
+  function getWorkerUrl() {
+    return WORKER_URL;
   }
 
   // =========================================================================
@@ -29,12 +33,12 @@ const ClaudeAPI = (() => {
   // =========================================================================
 
   /**
-   * Embed an array of document texts using Voyage AI.
+   * Embed an array of document texts using Voyage AI (via worker proxy).
    * Automatically batches to stay within API limits.
    *
-   * @param {string[]} texts - documents to embed
-   * @param {Function} [onProgress] - called with (batchIndex, totalBatches)
-   * @returns {Promise<number[][]>} array of embedding vectors
+   * @param {string[]} texts
+   * @param {Function} [onProgress] - (batchIndex, totalBatches)
+   * @returns {Promise<number[][]>} embedding vectors
    */
   async function embedDocuments(texts, onProgress) {
     const allEmbeddings = new Array(texts.length);
@@ -47,7 +51,7 @@ const ClaudeAPI = (() => {
 
       if (onProgress) onProgress(b + 1, totalBatches);
 
-      const resp = await fetch(EMBED_ENDPOINT, {
+      const resp = await fetch(`${WORKER_URL}/embed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -86,12 +90,6 @@ const ClaudeAPI = (() => {
 
   /**
    * Send a message to Claude via the worker proxy.
-   * @param {Object} options
-   * @param {string} options.system - system prompt
-   * @param {Array}  options.messages - messages array [{role, content}]
-   * @param {number} [options.maxTokens=1024]
-   * @param {number} [options.temperature=0.3]
-   * @returns {Promise<string>} Claude's text response
    */
   async function sendMessage({ system, messages, maxTokens = 1024, temperature = 0.3 }) {
     const body = {
@@ -102,7 +100,7 @@ const ClaudeAPI = (() => {
     };
     if (system) body.system = system;
 
-    const resp = await fetch(CLAUDE_ENDPOINT, {
+    const resp = await fetch(`${WORKER_URL}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -133,10 +131,6 @@ const ClaudeAPI = (() => {
   // Stage 2: Topic Naming (democratic voting — 5 calls, majority name)
   // =========================================================================
 
-  /**
-   * Name a single topic cluster by sending representative documents to Claude
-   * five times and taking a majority vote on the topic name.
-   */
   async function nameTopicDemocratic(repTexts, topTerms, clusterId, onProgress) {
     const systemPrompt = `You are an expert qualitative researcher performing topic modeling analysis. You will be given a set of representative documents from a single cluster along with the most frequent terms. Your job is to name the topic and provide a brief description.
 
@@ -189,14 +183,14 @@ Please name this topic and describe what it's about.`;
       };
     }
 
-    // Majority vote on name (case-insensitive)
+    // Majority vote (case-insensitive)
     const freq = {};
     names.forEach(n => {
       const key = n.toLowerCase();
       freq[key] = (freq[key] || 0) + 1;
     });
 
-    let majorityKey = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
+    const majorityKey = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
     const winner = results.find(r => r.name.trim().toLowerCase() === majorityKey) || results[0];
 
     return {
@@ -210,9 +204,6 @@ Please name this topic and describe what it's about.`;
   // Stage 3: Document Classification
   // =========================================================================
 
-  /**
-   * Classify a batch of documents into the discovered topics.
-   */
   async function classifyBatch(docs, topics) {
     const topicList = topics.map(t => `- "${t.name}": ${t.description}`).join('\n');
 
@@ -282,7 +273,8 @@ Do not include any text outside the JSON array.`;
   // =========================================================================
 
   return {
-    setEndpoints,
+    setWorkerUrl,
+    getWorkerUrl,
     embedDocuments,
     sendMessage,
     nameTopicDemocratic,

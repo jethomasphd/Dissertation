@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>E2E Topic Modeler — Embedding-to-Explanation Topic Modeling</title>
-  <meta name="description" content="E2E Topic Modeler: a hybrid analytic tool that embeds documents into semantic space using Voyage AI, clusters them with K-means, and uses Claude to generate human-readable topic explanations.">
+  <meta name="description" content="E2E Topic Modeler: Voyage AI embeddings, UMAP dimensionality reduction, HDBSCAN clustering, and Claude LLM interpretation — the full dissertation methodology in the browser.">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -28,9 +28,9 @@
     <div class="container">
       <h1><span class="accent">Embedding-to-Explanation</span><br>Topic Modeling</h1>
       <p class="subtitle">
-        A hybrid analytic approach that maps your documents into dense semantic embedding
-        space using Voyage AI, clusters them to discover topical structure, then uses
-        Claude to convert those clusters into clear, human-readable explanations.
+        A hybrid analytic approach that embeds documents with Voyage AI, reduces
+        dimensionality with UMAP, clusters with HDBSCAN, then uses Claude to
+        convert those clusters into clear, human-readable explanations.
       </p>
       <a href="#app-section" class="hero-cta">Get Started</a>
     </div>
@@ -40,23 +40,33 @@
   <section id="how-it-works" class="section">
     <div class="container">
       <h2 class="section-title">How It Works</h2>
-      <p class="section-subtitle">Three stages, from raw text to named topics — no coding required.</p>
+      <p class="section-subtitle">Five steps matching the dissertation methodology — no coding required.</p>
 
       <div class="steps-grid">
         <div class="step-card">
           <div class="step-number">1</div>
           <h3>Embed</h3>
-          <p>Your documents are converted into dense semantic vectors using Voyage AI's embedding model (voyage-3), capturing meaning beyond surface-level word frequency.</p>
+          <p>Documents are converted into dense 1024-dimensional semantic vectors using Voyage AI (voyage-3), Anthropic's recommended embedding model.</p>
         </div>
         <div class="step-card">
           <div class="step-number">2</div>
-          <h3>Cluster</h3>
-          <p>K-means clustering with cosine similarity groups the embedding vectors into topical clusters. Choose your own k or let the tool auto-detect it via silhouette score.</p>
+          <h3>Reduce</h3>
+          <p>UMAP (Uniform Manifold Approximation and Projection) reduces the high-dimensional embeddings to a lower-dimensional space using the cosine metric.</p>
         </div>
         <div class="step-card">
           <div class="step-number">3</div>
-          <h3>Explain</h3>
-          <p>Representative documents from each cluster are sent to Claude, which names and describes every topic through democratic voting — then classifies every document.</p>
+          <h3>Cluster</h3>
+          <p>HDBSCAN discovers clusters of varying density in the UMAP-reduced space, using mutual reachability distance and the Excess of Mass (EOM) extraction method.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <h3>Name</h3>
+          <p>Representative documents from each cluster are sent to Claude 5 times. The topic name receiving the most "votes" wins — a democratic LLM naming process.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">5</div>
+          <h3>Classify</h3>
+          <p>Every document in the corpus is classified into one of the discovered topics by Claude, including noise points not assigned during clustering.</p>
         </div>
       </div>
     </div>
@@ -66,28 +76,29 @@
   <section id="about" class="section" style="background:#fff;">
     <div class="container">
       <h2 class="section-title">About E2E Topic Modeling</h2>
-      <p class="section-subtitle">A research-grade methodology made accessible through the browser.</p>
+      <p class="section-subtitle">The dissertation methodology, made accessible through the browser.</p>
 
       <div class="about-grid">
         <div class="about-text">
           <p>
             <strong>Embedding-to-Explanation (E2E) Topic Modeling</strong> is a hybrid analytic approach
-            in which documents are first mapped into dense semantic embedding space using Voyage AI
-            to identify clusters of language that reflect underlying topical structure, and are then
-            passed to Claude to convert those statistically derived clusters into clear,
-            human-readable explanations through democratic LLM voting.
+            in which documents are embedded into dense semantic space, reduced via UMAP, and clustered
+            with HDBSCAN to discover topical structure. The statistically derived clusters are then
+            interpreted by Claude through democratic LLM voting to produce human-readable topic names
+            and document classifications.
           </p>
-          <p>The pipeline mirrors the dissertation methodology:</p>
+          <p>The pipeline matches the dissertation methodology:</p>
           <ul>
             <li><strong>Voyage AI (voyage-3)</strong> — dense document embeddings</li>
-            <li><strong>K-means with cosine similarity</strong> — unsupervised clustering</li>
-            <li><strong>Claude (democratic voting)</strong> — topic naming with majority consensus</li>
+            <li><strong>UMAP</strong> — dimensionality reduction (n_neighbors=15, n_components=5, min_dist=0.01, cosine)</li>
+            <li><strong>HDBSCAN</strong> — density-based clustering with EOM cluster extraction</li>
+            <li><strong>Claude (democratic voting)</strong> — topic naming with 5-vote majority consensus</li>
             <li><strong>Claude (classification)</strong> — document-level theme assignment</li>
           </ul>
           <p>
-            Clustering runs <strong>locally in your browser</strong> on the embedding vectors.
-            The embedding, topic-naming, and classification stages communicate through secure
-            API proxies — Voyage AI for embeddings, Claude for interpretation.
+            UMAP and HDBSCAN run <strong>locally in your browser</strong> on the embedding vectors.
+            The embedding, topic-naming, and classification stages communicate with a Cloudflare
+            Worker that securely proxies requests to Voyage AI and Claude.
           </p>
         </div>
 
@@ -121,10 +132,25 @@
   <section id="app-section" class="section">
     <div class="container">
       <h2 class="section-title">Launch the Tool</h2>
-      <p class="section-subtitle">Upload your CSV, configure clustering, and let E2E do the rest.</p>
+      <p class="section-subtitle">Connect your worker, upload a CSV, and let E2E do the rest.</p>
 
       <!-- Error Banner -->
       <div id="error-banner" class="error-banner"></div>
+
+      <!-- Worker URL Configuration -->
+      <div class="worker-config">
+        <label>API Worker URL</label>
+        <div class="config-row">
+          <input type="url" id="worker-url-input" class="worker-url-input"
+                 placeholder="https://e2e-topic-modeler-api.your-account.workers.dev">
+          <button id="btn-save-url" class="btn-gold">Save</button>
+          <span id="worker-status" class="worker-status"></span>
+        </div>
+        <p class="hint" style="margin-top:6px;">
+          Deploy the worker from <code>worker/</code> with <code>wrangler deploy</code>,
+          then paste the URL here. Saved in your browser.
+        </p>
+      </div>
 
       <!-- Upload Area -->
       <div class="upload-area">
@@ -139,14 +165,14 @@
 
       <!-- Cluster Configuration -->
       <div id="cluster-config" class="cluster-config">
-        <label>Cluster Settings</label>
+        <label>HDBSCAN Settings</label>
         <div class="config-row">
           <select id="cluster-mode">
-            <option value="auto">Auto-detect k (silhouette score)</option>
-            <option value="manual">Manual k</option>
+            <option value="auto">Auto min_cluster_size</option>
+            <option value="manual">Manual min_cluster_size</option>
           </select>
           <span id="cluster-k-group" style="display:none;">
-            <input type="number" id="cluster-k" min="2" max="20" value="5" style="width:80px;">
+            <input type="number" id="cluster-k" min="2" max="100" value="15" style="width:80px;">
           </span>
           <button id="btn-run" class="btn-gold" disabled>Run E2E Pipeline</button>
         </div>
@@ -178,7 +204,7 @@
 
       <!-- Cluster Visualization -->
       <div id="cluster-viz" class="cluster-viz">
-        <h3 style="text-align:center; margin-bottom:16px; color:var(--navy);">Cluster Visualization (PCA Projection)</h3>
+        <h3 style="text-align:center; margin-bottom:16px; color:var(--navy);">Cluster Visualization (PCA of UMAP Embedding)</h3>
         <canvas id="viz-canvas"></canvas>
       </div>
 

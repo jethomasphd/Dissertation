@@ -1,5 +1,5 @@
 """
-Command-line interface for TopicFlow.
+Command-line interface for E2E Topic Modeling.
 """
 
 import argparse
@@ -11,8 +11,8 @@ import pandas as pd
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="topicflow",
-        description="TopicFlow: BERTopic + LLM Topic Modeling Pipeline",
+        prog="e2e",
+        description="E2E: Embedding-to-Explanation Topic Modeling Pipeline",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -20,7 +20,7 @@ def main():
     run_parser = subparsers.add_parser("run", help="Run the full pipeline on a corpus")
     run_parser.add_argument("input", help="Path to input CSV file")
     run_parser.add_argument("--text-column", default="text", help="Name of the text column (default: text)")
-    run_parser.add_argument("--output-dir", default="topicflow_output", help="Output directory")
+    run_parser.add_argument("--output-dir", default="e2e_output", help="Output directory")
     run_parser.add_argument("--domain-context", default="a text corpus", help="Domain context for LLM prompts")
     run_parser.add_argument("--n-iterations", type=int, default=50, help="Hyperparameter search iterations")
     run_parser.add_argument("--n-votes", type=int, default=100, help="LLM naming votes per topic")
@@ -54,8 +54,8 @@ def main():
 
 
 def _run(args):
-    from topicflow.pipeline import TopicFlowPipeline
-    from topicflow.preprocessing import load_custom_stopwords
+    from e2e.pipeline import E2EPipeline
+    from e2e.preprocessing import load_custom_stopwords
 
     df = pd.read_csv(args.input)
     if args.text_column not in df.columns:
@@ -70,7 +70,7 @@ def _run(args):
         custom_stopwords = load_custom_stopwords(args.stopwords_file)
         print(f"Loaded {len(custom_stopwords)} custom stopwords")
 
-    pipeline = TopicFlowPipeline(
+    pipeline = E2EPipeline(
         domain_context=args.domain_context,
         llm_model=args.llm_model,
         embedding_model=args.embedding_model,
@@ -92,7 +92,7 @@ def _run(args):
 
 
 def _classify(args):
-    from topicflow.classifier import TopicClassifier
+    from e2e.classifier import TopicClassifier
 
     df = pd.read_csv(args.input)
     if args.text_column not in df.columns:
