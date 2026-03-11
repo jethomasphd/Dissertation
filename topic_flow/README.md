@@ -1,14 +1,16 @@
-# TopicFlow
+# E2E Topic Modeling — Python Research Pipeline
 
 **A BERTopic and Large Language Model Pipeline for Topic Discovery and Classification**
 
-TopicFlow is a three-stage methodology for automated topic discovery in text corpora. It combines transformer-based topic modeling (BERTopic) with large language model (LLM) interpretation and classification to produce human-interpretable, reproducible thematic analyses of any text corpus.
+This is the Python research implementation of the Embedding-to-Explanation (E2E) topic modeling methodology. It combines transformer-based topic modeling (BERTopic) with large language model (LLM) interpretation and classification to produce human-interpretable, reproducible thematic analyses of any text corpus.
+
+> **Note:** For the browser-based version of this methodology (no coding required), see the [E2E Topic Modeler web app](../e2e-topic-modeler/).
 
 ## The Pipeline
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 1: BERTopic with Hyperparameter Optimization         │
+│  STAGE 1: Embedding & Clustering (BERTopic)                  │
 │  ┌──────────┐  ┌──────┐  ┌─────────┐  ┌────────┐  ┌─────┐ │
 │  │ Embed    │→ │ UMAP │→ │ HDBSCAN │→ │ TF-IDF │→ │ c_v │ │
 │  │(MiniLM)  │  │      │  │         │  │        │  │score│ │
@@ -23,6 +25,18 @@ TopicFlow is a three-stage methodology for automated topic discovery in text cor
 │  Validated against human-labeled subset (>85% agreement)    │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+## E2E Methodology Comparison
+
+| Component | Python Pipeline (this) | Web App (e2e-topic-modeler) |
+|-----------|----------------------|---------------------------|
+| **Embeddings** | SentenceTransformer (all-MiniLM-L6-v2) | Voyage AI (voyage-3) |
+| **Dim. Reduction** | UMAP | N/A (K-means on full vectors) |
+| **Clustering** | HDBSCAN | K-means + cosine similarity |
+| **Topic Extraction** | Class-based TF-IDF | TF-IDF (term extraction only) |
+| **Topic Naming** | GPT-4o (5,000 votes) | Claude (5 votes) |
+| **Classification** | GPT-4o | Claude |
+| **Optimization** | 50 iterations × 24 solutions | Silhouette score for k |
 
 ## Installation
 
@@ -112,20 +126,6 @@ classifier = TopicClassifier(themes=themes)
 labels = classifier.classify_corpus(all_documents)
 ```
 
-## Methodology
-
-### Stage 1: BERTopic Modeling
-
-Documents are embedded using SentenceTransformer (`all-MiniLM-L6-v2`), reduced via UMAP, clustered with HDBSCAN, and topics are extracted via class-based TF-IDF. A random search over UMAP and HDBSCAN hyperparameters (default: 50 iterations × 24 topic solutions = 1,200 models) selects the configuration maximizing c_v coherence.
-
-### Stage 2: Democratic LLM Naming
-
-Each topic's representative words are sent to an LLM (default: GPT-4o) independently N times. The most frequently returned name wins by majority vote, reducing individual LLM bias and producing stable, consensus-driven topic labels.
-
-### Stage 3: LLM Classification
-
-The discovered theme names are used as classification categories. Each document in the target corpus is independently classified by the LLM. Classification is validated against a human-labeled subset with a configurable agreement threshold (default: >85%).
-
 ## Configuration
 
 | Parameter | Default | Description |
@@ -145,11 +145,11 @@ The discovered theme names are used as classification categories. Each document 
 ## Citation
 
 ```bibtex
-@article{thomas2025topicflow,
-  title={TopicFlow: A BERTopic and Large Language Model Pipeline for Topic Discovery and Classification},
+@phdthesis{thomas2025e2e,
+  title={Embedding-to-Explanation Topic Modeling: A Hybrid Approach for Interpretive Text Analysis},
   author={Thomas, Jacob Edward},
   year={2025},
-  note={Preprint}
+  school={The University of Texas at Austin}
 }
 ```
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>E2E Topic Modeler — Embedding-to-Explanation Topic Modeling</title>
-  <meta name="description" content="E2E Topic Modeler: a hybrid analytic tool that embeds documents into semantic space, clusters them, and uses a large language model to generate human-readable topic explanations.">
+  <meta name="description" content="E2E Topic Modeler: a hybrid analytic tool that embeds documents into semantic space using Voyage AI, clusters them with K-means, and uses Claude to generate human-readable topic explanations.">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -28,9 +28,9 @@
     <div class="container">
       <h1><span class="accent">Embedding-to-Explanation</span><br>Topic Modeling</h1>
       <p class="subtitle">
-        A hybrid analytic approach that maps your documents into semantic embedding space
-        to discover topical clusters, then uses a large language model to convert those
-        clusters into clear, human-readable explanations.
+        A hybrid analytic approach that maps your documents into dense semantic embedding
+        space using Voyage AI, clusters them to discover topical structure, then uses
+        Claude to convert those clusters into clear, human-readable explanations.
       </p>
       <a href="#app-section" class="hero-cta">Get Started</a>
     </div>
@@ -45,18 +45,18 @@
       <div class="steps-grid">
         <div class="step-card">
           <div class="step-number">1</div>
-          <h3>Embed &amp; Vectorize</h3>
-          <p>Your documents are transformed into TF-IDF vectors that capture the semantic fingerprint of each text — all computed locally in your browser.</p>
+          <h3>Embed</h3>
+          <p>Your documents are converted into dense semantic vectors using Voyage AI's embedding model (voyage-3), capturing meaning beyond surface-level word frequency.</p>
         </div>
         <div class="step-card">
           <div class="step-number">2</div>
           <h3>Cluster</h3>
-          <p>K-means clustering with cosine similarity groups documents that share underlying topical structure. Choose your own k or let the tool auto-detect it.</p>
+          <p>K-means clustering with cosine similarity groups the embedding vectors into topical clusters. Choose your own k or let the tool auto-detect it via silhouette score.</p>
         </div>
         <div class="step-card">
           <div class="step-number">3</div>
           <h3>Explain</h3>
-          <p>Representative documents from each cluster are sent to Claude, which names and describes every topic — then classifies every document for you.</p>
+          <p>Representative documents from each cluster are sent to Claude, which names and describes every topic through democratic voting — then classifies every document.</p>
         </div>
       </div>
     </div>
@@ -71,22 +71,23 @@
       <div class="about-grid">
         <div class="about-text">
           <p>
-            <strong>Embedding-to-Explanation Topic Modeling</strong> is a hybrid analytic approach
-            in which documents are first mapped into semantic embedding space using TF-IDF vectorization
+            <strong>Embedding-to-Explanation (E2E) Topic Modeling</strong> is a hybrid analytic approach
+            in which documents are first mapped into dense semantic embedding space using Voyage AI
             to identify clusters of language that reflect underlying topical structure, and are then
-            passed to a large language model to convert those statistically derived clusters into clear,
-            human-readable explanations.
+            passed to Claude to convert those statistically derived clusters into clear,
+            human-readable explanations through democratic LLM voting.
           </p>
-          <p>This tool is designed for:</p>
+          <p>The pipeline mirrors the dissertation methodology:</p>
           <ul>
-            <li>Researchers analyzing qualitative text data</li>
-            <li>Analysts exploring survey responses, reviews, or reports</li>
-            <li>Anyone with a collection of text documents who needs to find patterns</li>
+            <li><strong>Voyage AI (voyage-3)</strong> — dense document embeddings</li>
+            <li><strong>K-means with cosine similarity</strong> — unsupervised clustering</li>
+            <li><strong>Claude (democratic voting)</strong> — topic naming with majority consensus</li>
+            <li><strong>Claude (classification)</strong> — document-level theme assignment</li>
           </ul>
           <p>
-            All embedding and clustering runs <strong>entirely in your browser</strong>. Only the topic-naming
-            and classification stages communicate with the Claude API through a secure proxy — your raw
-            documents are processed locally.
+            Clustering runs <strong>locally in your browser</strong> on the embedding vectors.
+            The embedding, topic-naming, and classification stages communicate through secure
+            API proxies — Voyage AI for embeddings, Claude for interpretation.
           </p>
         </div>
 
@@ -210,7 +211,7 @@
 
   <!-- ====== Footer ====== -->
   <footer>
-    <p class="credit">Based on the methodology of Thomas (2025). Powered by Claude.</p>
+    <p class="credit">Based on the methodology of Thomas (2025). Powered by Voyage AI &amp; Claude.</p>
     <p><span class="author">Jacob Edward Thomas, PhD</span> &mdash; The University of Texas at Austin</p>
   </footer>
 

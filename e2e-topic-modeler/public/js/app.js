@@ -12,7 +12,7 @@
 
   let rawData = [];        // Array of { id, text, ...extra columns }
   let extraColumns = [];   // Column names beyond id and text
-  let clusterResult = null; // { labels, centroids, k, matrix, vocabulary, repDocs, topTerms, points2d }
+  let clusterResult = null; // { labels, centroids, k, matrix, repDocs, topTerms, points2d }
   let topicInfo = [];      // [{ id, name, description, keywords }]
   let classifications = {}; // { docId: topicName }
 
@@ -191,41 +191,50 @@
     try {
       // ---- Stage 1: Embedding & Clustering ----
       setStage(0);
-      updateProgress('Building TF-IDF vectors...', 0);
-
-      // Run TF-IDF in a microtask to allow UI update
-      await tick();
       const texts = rawData.map(d => d.text);
-      const { matrix, vocabulary } = Clustering.buildTFIDF(texts);
-      updateProgress('TF-IDF complete. Determining clusters...', 20);
+
+      // Step 1a: Embed documents with Voyage AI
+      updateProgress('Embedding documents with Voyage AI (voyage-3)...', 0);
       await tick();
 
+      const rawEmbeddings = await ClaudeAPI.embedDocuments(texts, (batch, total) => {
+        const pct = Math.round((batch / total) * 40);
+        updateProgress(`Embedding batch ${batch} of ${total}...`, pct);
+      });
+
+      updateProgress('Embeddings complete. Normalizing vectors...', 42);
+      await tick();
+      const matrix = Clustering.normalizeEmbeddings(rawEmbeddings);
+
+      // Step 1b: Determine k and cluster
       let k;
       if (clusterModeSelect.value === 'auto') {
-        updateProgress('Auto-detecting optimal number of clusters (this may take a moment)...', 25);
+        updateProgress('Auto-detecting optimal number of clusters (silhouette score)...', 45);
         await tick();
         k = Clustering.autoDetectK(matrix, 2, Math.min(15, Math.floor(rawData.length / 5)));
-        updateProgress(`Optimal k=${k} detected. Running k-means...`, 40);
+        updateProgress(`Optimal k=${k} detected. Running K-means...`, 55);
       } else {
         k = parseInt(clusterKInput.value, 10) || 5;
         k = Math.max(2, Math.min(k, 20, Math.floor(rawData.length / 2)));
-        updateProgress(`Running k-means with k=${k}...`, 35);
+        updateProgress(`Running K-means with k=${k}...`, 50);
       }
       await tick();
 
       const { labels, centroids } = Clustering.kmeans(matrix, k);
-      updateProgress('Clustering complete. Selecting representative documents...', 60);
+      updateProgress('Clustering complete. Selecting representative documents...', 70);
       await tick();
 
       const repDocs = Clustering.getRepresentativeDocs(matrix, labels, centroids, 10);
-      const topTerms = Clustering.getTopTerms(matrix, labels, vocabulary, k, 10);
 
-      // 2D projection for visualisation
-      updateProgress('Projecting clusters for visualization...', 75);
+      // Step 1c: Extract top terms per cluster (lightweight TF-IDF, for naming prompts only)
+      const topTerms = Clustering.getTopTerms(texts, labels, k, 10);
+
+      // Step 1d: PCA projection for visualisation
+      updateProgress('Projecting clusters for visualization...', 80);
       await tick();
       const points2d = Clustering.projectTo2D(matrix);
 
-      clusterResult = { labels, centroids, k, matrix, vocabulary, repDocs, topTerms, points2d };
+      clusterResult = { labels, centroids, k, matrix, repDocs, topTerms, points2d };
 
       updateProgress('Stage 1 complete.', 100);
       completeStage(0);
