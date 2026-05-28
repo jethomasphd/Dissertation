@@ -1,0 +1,32 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# E2E pipeline run outputs
+e2e_output/
+results/
+
+# ── Node / Cloudflare ──
+node_modules/
+.wrangler/
+.dev.vars
+*.log
+
+# ── Secrets / environment ──
+.env
+.env.*
+!.env.example
+
+# ── OS / editor cruft ──
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
