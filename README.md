@@ -173,12 +173,10 @@ formats. Each deliverable below is **generated from code** for full reproducibil
 
 | Deliverable | Audience | File | Generator |
 |---|---|---|---|
-| *The Drinking Age* — popular history of alcohol marketing | Public | [`the_drinking_age.docx`](deliverables/the_drinking_age.docx) | `generate_book.py` |
+| *The Oldest Sell* — illustrated popular history of alcohol marketing | Public | [`the_oldest_sell.docx`](deliverables/the_oldest_sell.docx) | `generate_book.py` |
 | E2E methodology paper (preprint) | Computational researchers | [`e2e_methods_paper.docx`](deliverables/e2e_methods_paper.docx) | `generate_methods_paper.py` |
 | Brief Report — Study 1 (themes & prevalence) | Health scientists, policymakers | [`brief_report_study1.docx`](deliverables/brief_report_study1.docx) | `generate_brief_report_1.py` |
-| Brief Report — Study 2 (cross-lagged influence) | Health scientists, policymakers | [`brief_report_study2.docx`](deliverables/brief_report_study2.docx) | `generate_brief_report_2.py` |
-| Publication-plan email | Advisor | [`email_to_pasch.docx`](deliverables/email_to_pasch.docx) | `generate_email.py` |
-| **Interactive dissection** — visual portfolio | Everyone | [`dissertation_dissection.html`](deliverables/dissertation_dissection.html) | hand-authored |
+| Brief Report — Study 2 (cross-lagged influence) | Health scientists, policymakers | [`brief_report_study2.docx`](deliverables/brief_report_study2.docx) | `generate_brief_report_2.py` || **Interactive dissection** — visual portfolio | Everyone | [`dissertation_dissection.html`](deliverables/dissertation_dissection.html) | hand-authored |
 
 The publication strategy is intentionally interconnected: the method preprint establishes
 priority and is cited by both brief reports; Study 2 builds on Study 1; the book provides
@@ -187,7 +185,7 @@ historical context for all of it.
 ```mermaid
 flowchart TD
     D([Dissertation]):::anchor
-    D --> B[Popular Book<br/>The Drinking Age]:::book
+    D --> B[Popular Book<br/>The Oldest Sell]:::book
     D --> M[E2E Method<br/>preprint + software]:::soft
     D --> S1[Brief Report · Study 1]:::paper
     D --> S2[Brief Report · Study 2]:::paper
@@ -211,12 +209,11 @@ flowchart TD
 **Rebuild every document deliverable** from source:
 
 ```bash
-pip install python-docx
+pip install python-docx PyMuPDF
 python3 generate_book.py
 python3 generate_methods_paper.py
 python3 generate_brief_report_1.py
 python3 generate_brief_report_2.py
-python3 generate_email.py
 ```
 
 **Run the web app locally** (see [`e2e-topic-modeler/README.md`](e2e-topic-modeler/README.md) for keys):
@@ -246,14 +243,13 @@ Dissertation/
 ├── dissertation_full.txt            # Full text extraction
 │
 ├── deliverables/                    # Generated research outputs
-│   ├── the_drinking_age.docx
+│   ├── the_oldest_sell.docx        # Illustrated popular history (28 figures)
 │   ├── e2e_methods_paper.docx
 │   ├── brief_report_study1.docx
 │   ├── brief_report_study2.docx
-│   ├── email_to_pasch.docx
 │   └── dissertation_dissection.html # Interactive portfolio piece
 │
-├── generate_*.py                    # Deliverable generators (python-docx)
+├── generate_*.py                    # Deliverable generators (python-docx + PyMuPDF)
 │
 ├── e2e/                             # E2E Python research pipeline
 │   ├── e2e/                         #   preprocessing · modeling · naming
