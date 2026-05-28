@@ -66,7 +66,7 @@ async function handleChat(body, env) {
   }
 
   const upstreamBody = {
-    model: body.model || 'claude-sonnet-4-5-20250514',
+    model: body.model || 'claude-sonnet-4-6',
     max_tokens: body.max_tokens || 1024,
     messages: body.messages,
   };
