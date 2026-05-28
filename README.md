@@ -176,7 +176,8 @@ formats. Each deliverable below is **generated from code** for full reproducibil
 | *The Oldest Sell* — illustrated popular history of alcohol marketing | Public | [`the_oldest_sell.docx`](deliverables/the_oldest_sell.docx) | `generate_book.py` |
 | E2E methodology paper (preprint) | Computational researchers | [`e2e_methods_paper.docx`](deliverables/e2e_methods_paper.docx) | `generate_methods_paper.py` |
 | Brief Report — Study 1 (themes & prevalence) | Health scientists, policymakers | [`brief_report_study1.docx`](deliverables/brief_report_study1.docx) | `generate_brief_report_1.py` |
-| Brief Report — Study 2 (cross-lagged influence) | Health scientists, policymakers | [`brief_report_study2.docx`](deliverables/brief_report_study2.docx) | `generate_brief_report_2.py` || **Interactive dissection** — visual portfolio | Everyone | [`dissertation_dissection.html`](deliverables/dissertation_dissection.html) | hand-authored |
+| Brief Report — Study 2 (cross-lagged influence) | Health scientists, policymakers | [`brief_report_study2.docx`](deliverables/brief_report_study2.docx) | `generate_brief_report_2.py` |
+| **Interactive dissection** — visual portfolio | Everyone | [`dissertation_dissection.html`](deliverables/dissertation_dissection.html) | hand-authored |
 
 The publication strategy is intentionally interconnected: the method preprint establishes
 priority and is cited by both brief reports; Study 2 builds on Study 1; the book provides
