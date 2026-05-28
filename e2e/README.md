@@ -31,12 +31,12 @@ This is the Python research implementation of the Embedding-to-Explanation (E2E)
 | Component | Python Pipeline (this) | Web App (e2e-topic-modeler) |
 |-----------|----------------------|---------------------------|
 | **Embeddings** | SentenceTransformer (all-MiniLM-L6-v2) | Voyage AI (voyage-3) |
-| **Dim. Reduction** | UMAP | N/A (K-means on full vectors) |
-| **Clustering** | HDBSCAN | K-means + cosine similarity |
+| **Dim. Reduction** | UMAP | UMAP (n_neighbors=15, n_components=5, min_dist=0.01) |
+| **Clustering** | HDBSCAN | HDBSCAN (mutual reachability, EOM extraction) |
 | **Topic Extraction** | Class-based TF-IDF | TF-IDF (term extraction only) |
 | **Topic Naming** | GPT-4o (5,000 votes) | Claude (5 votes) |
 | **Classification** | GPT-4o | Claude |
-| **Optimization** | 50 iterations × 24 solutions | Silhouette score for k |
+| **Optimization** | 50 iterations × 24 solutions | min_cluster_size (auto or manual) |
 
 ## Installation
 

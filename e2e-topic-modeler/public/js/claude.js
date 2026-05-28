@@ -11,7 +11,7 @@ const ClaudeAPI = (() => {
   'use strict';
 
   let WORKER_URL  = '';          // e.g. "https://e2e-topic-modeler-api.you.workers.dev"
-  const CLAUDE_MODEL = 'claude-sonnet-4-5-20250514';
+  const CLAUDE_MODEL = 'claude-sonnet-4-6';
   const VOYAGE_MODEL = 'voyage-3';
   const EMBED_BATCH  = 96;      // Voyage supports 128; leave headroom
 
